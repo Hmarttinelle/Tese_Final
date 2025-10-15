@@ -1,0 +1,139 @@
+{% extends "calculos/base.html" %}
+{% load static %}
+
+{% block title %}Detalhe do Cálculo - {{ calculo.elemento }}{% endblock %}
+
+{% block content %}
+    <div class="form-actions" style="margin-bottom: 20px; justify-content: space-between;">
+        <a href="{% url 'historico_calculos' %}" class="back-link" style="margin-bottom: 0;"><i class="fa-solid fa-arrow-left"></i> Voltar ao Histórico</a>
+        <button type="button" onclick="window.print()" class="btn-secundario"><i class="fa-solid fa-file-pdf"></i> Exportar Relatório PDF</button>
+    </div>
+
+    <h1>Detalhe do Cálculo: {{ calculo.elemento }}</h1>
+    <p>Efetuado em: {{ calculo.timestamp|date:"d/m/Y H:i:s" }}</p>
+
+    <div class="resultado-detalhado" style="grid-template-columns: 1fr; gap: 30px;">
+        
+        <div class="passo-a-passo">
+            <h4>Dados de Entrada</h4>
+            <ul style="list-style: none; padding-left: 0;">
+                {% for item in calculo.input_data_formatado %}
+                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <strong>{{ item.label }} {% if item.symbol %}(\({{ item.symbol }}\)){% endif %}:</strong> 
+                    {{ item.value }} {{ item.unit }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="resultado sucesso" style="margin-top: 0;">
+            <h3>Resultado Final:</h3>
+            <p><strong>{{ calculo.resultado_final.mensagem }}</strong></p>
+            {% if calculo.resultado_final.status == 'Sucesso' %}
+                {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
+                    <p style="font-size: 1.2rem;">
+                        <strong>Armadura a adotar: {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</strong>
+                    </p>
+                {% elif calculo.elemento == 'Sapata' %}
+                    <p><strong>Dimensões (A x B x H):</strong> {{ calculo.resultado_final.dimensoes }}</p>
+                    <p><strong>Armadura Inferior (Dir. X):</strong> {{ calculo.resultado_final.armadura_x }}</p>
+                    <p><strong>Armadura Inferior (Dir. Y):</strong> {{ calculo.resultado_final.armadura_y }}</p>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        {% if calculo.resultado_final.dados_desenho %}
+        <div class="desenhos-container" style="margin-top: 15px; text-align: center; page-break-inside: avoid;">
+            {% if calculo.elemento == 'Viga' %}
+            <div class="desenho-wrapper">
+                <h4>Representação Gráfica da Secção</h4>
+                <div id="desenho-viga-container" style="max-width: 400px; margin: 20px auto 0; width: 100%; height: auto; aspect-ratio: {{ calculo.resultado_final.dados_desenho.b|add:150 }} / {{ calculo.resultado_final.dados_desenho.h|add:150 }};"></div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-viga-container', 'desenho_viga.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
+                </div>
+            </div>
+            {% elif calculo.elemento == 'Pilar' %}
+            <div class="desenho-wrapper">
+                <h4>Representação Gráfica da Secção</h4>
+                <div id="desenho-pilar-container" style="max-width: 400px; margin: 20px auto 0; width: 100%; height: auto; aspect-ratio: {{ calculo.resultado_final.dados_desenho.b|add:150 }} / {{ calculo.resultado_final.dados_desenho.h|add:150 }};"></div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-pilar-container', 'desenho_pilar.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
+                </div>
+            </div>
+            {% elif calculo.elemento == 'Sapata' %}
+            <div class="desenho-box" style="display: inline-block; vertical-align: top; width: 100%; max-width: 450px; margin: 10px;">
+                <h4>Representação Gráfica (Planta)</h4>
+                <div id="desenho-sapata-planta">{{ calculo.desenho_planta_svg|safe }}</div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-sapata-planta', 'desenho_sapata_planta.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
+                </div>
+            </div>
+            <div class="desenho-box" style="display: inline-block; vertical-align: top; width: 100%; max-width: 450px; margin: 10px;">
+                <h4>Representação Gráfica (Corte A-A)</h4>
+                <div id="desenho-sapata-corte">{{ calculo.desenho_corte_svg|safe }}</div>
+                <div style="text-align: center; margin-top: 10px;">
+                     <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-sapata-corte', 'desenho_sapata_corte.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if calculo.resultado_final.passos %}
+        <div class="passo-a-passo">
+            <h4>Cálculo Detalhado (Passo a Passo):</h4>
+            <ul>
+                {% for passo in calculo.resultado_final.passos %}
+                    <li>
+                        <strong>{{ passo.titulo }}</strong>
+                        {% if passo.formula %}<div style="margin: 5px 0; color: #005a9c;">Fórmula: \( {{ passo.formula }} \)</div>{% endif %}
+                        <div style="margin-left: 10px; line-height: 1.8;">{{ passo.calculo|safe }}</div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function exportarSVG(containerId, filename) {
+            const container = document.getElementById(containerId);
+            if (!container) { console.error("Contentor do SVG não encontrado:", containerId); return; }
+            const svgElement = container.querySelector('svg');
+            if (!svgElement) { console.error("Elemento SVG não encontrado dentro de:", containerId); return; }
+            const serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svgElement);
+            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+            }
+            const blob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+    
+    {% if calculo.resultado_final.dados_desenho and calculo.resultado_final.status == 'Sucesso' %}
+        {% if calculo.elemento == 'Viga' %}
+            {{ calculo.resultado_final.dados_desenho|json_script:"json-dados-viga" }}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() { try { const dados = JSON.parse(document.getElementById('json-dados-viga').textContent); const container = document.getElementById('desenho-viga-container'); if (!dados || !container) return; container.innerHTML = ''; const PADDING = 60; const viewboxWidth = dados.b + PADDING * 2; const viewboxHeight = dados.h + PADDING * 2; const draw = SVG().addTo(container).size('100%', '100%').viewbox(0, 0, viewboxWidth, viewboxHeight); const arrow = draw.marker(10, 10, function(add) { add.path('M0,0 L10,5 L0,10 Z').fill('#333'); }); draw.rect(dados.b, dados.h).move(PADDING, PADDING).fill('#e0e0e0').stroke({ width: 2, color: '#555' }); const estriboX = PADDING + dados.c_nom; const estriboY = PADDING + dados.c_nom; const estriboW = dados.b - 2 * dados.c_nom; const estriboH = dados.h - 2 * dados.c_nom; draw.rect(estriboW, estriboH).move(estriboX, estriboY).fill('none').stroke({ width: dados.phi_estribo / 4, color: '#777' }).radius(dados.phi_estribo * 2); const n_barras = dados.n_barras; const phi_long = dados.phi_long; const y_pos_inf = PADDING + dados.h - dados.c_nom - dados.phi_estribo - (phi_long / 2); const startX_inf = estriboX + (dados.phi_estribo / 2) + (phi_long / 2); const availableWidth = estriboW - dados.phi_estribo - phi_long; const varoes_inf = []; for (let i = 0; i < n_barras; i++) { let x_pos = startX_inf; if (n_barras > 1) { x_pos += i * (availableWidth / (n_barras - 1)); } draw.circle(phi_long).center(x_pos, y_pos_inf).fill('#333'); varoes_inf.push({x: x_pos, y: y_pos_inf}); } const n_barras_sup = 2; const phi_sup = 10; const y_pos_sup = PADDING + dados.c_nom + dados.phi_estribo + (phi_sup / 2); const x1_pos_sup = estriboX + (dados.phi_estribo / 2) + (phi_sup / 2); const x2_pos_sup = estriboX + estriboW - (dados.phi_estribo / 2) - (phi_sup / 2); draw.circle(phi_sup).center(x1_pos_sup, y_pos_sup).fill('#333'); draw.circle(phi_sup).center(x2_pos_sup, y_pos_sup).fill('#333'); draw.line(15, PADDING, 15, PADDING + dados.h).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow); draw.text(String(dados.h)).addClass('dim-text').move(25, PADDING + dados.h / 2).transform({ rotation: -90 }); draw.line(PADDING, 15, PADDING + dados.b, 15).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow); draw.text(String(dados.b)).addClass('dim-text').move(PADDING + dados.b / 2, 25).attr('text-anchor', 'middle'); const label_y_inf = PADDING + dados.h + 30; const first_bar_inf = varoes_inf[0]; draw.path(`M ${first_bar_inf.x},${first_bar_inf.y} L ${first_bar_inf.x},${label_y_inf} L ${first_bar_inf.x + 20},${label_y_inf}`).fill('none').stroke({ width: 1.5, color: '#005a9c' }); draw.text(`${n_barras} Ø ${phi_long}`).addClass('dim-text').fill('#005a9c').move(first_bar_inf.x + 25, label_y_inf - 16); const label_y_sup = PADDING - 30; draw.path(`M ${x1_pos_sup},${y_pos_sup} L ${x1_pos_sup},${label_y_sup} L ${x1_pos_sup + 20},${label_y_sup}`).fill('none').stroke({ width: 1.5, color: '#005a9c' }); draw.text(`${n_barras_sup} Ø ${phi_sup}`).addClass('dim-text').fill('#005a9c').move(x1_pos_sup + 25, label_y_sup - 16); } catch (e) { console.error("Erro ao desenhar o SVG da viga:", e); } });
+            </script>
+        {% elif calculo.elemento == 'Pilar' %}
+            {{ calculo.resultado_final.dados_desenho|json_script:"json-dados-pilar" }}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() { try { const dados = JSON.parse(document.getElementById('json-dados-pilar').textContent); const container = document.getElementById('desenho-pilar-container'); if (!dados || !container) return; container.innerHTML = ''; const PADDING = 60; const viewboxWidth = dados.b + PADDING * 2; const viewboxHeight = dados.h + PADDING * 2; const draw = SVG().addTo(container).size('100%', '100%').viewbox(0, 0, viewboxWidth, viewboxHeight); const arrow = draw.marker(10, 10, function(add) { add.path('M0,0 L10,5 L0,10 Z').fill('#333'); }); draw.rect(dados.b, dados.h).move(PADDING, PADDING).fill('#e0e0e0').stroke({ width: 2, color: '#555' }); const estriboX = PADDING + dados.c_nom; const estriboY = PADDING + dados.c_nom; const estriboW = dados.b - 2 * dados.c_nom; const estriboH = dados.h - 2 * dados.c_nom; draw.rect(estriboW, estriboH).move(estriboX, estriboY).fill('none').stroke({ width: dados.phi_estribo / 2, color: '#777' }).radius(dados.phi_estribo * 2); const posicoes = []; const n_total = dados.n_barras; const phi_long = dados.phi_long; const canto_sup_esq = { x: estriboX + phi_long/2, y: estriboY + phi_long/2 }; const canto_sup_dir = { x: estriboX + estriboW - phi_long/2, y: estriboY + phi_long/2 }; const canto_inf_esq = { x: estriboX + phi_long/2, y: estriboY + estriboH - phi_long/2 }; const canto_inf_dir = { x: estriboX + estriboW - phi_long/2, y: estriboY + estriboH - phi_long/2 }; posicoes.push(canto_sup_esq, canto_sup_dir, canto_inf_esq, canto_inf_dir); const n_inter_h = Math.ceil(n_total/2) - 2; if (n_inter_h > 0) { const esp_h = (estriboH - phi_long) / (n_inter_h + 1); for (let i = 1; i <= n_inter_h; i++) { posicoes.push({ x: canto_sup_esq.x, y: canto_sup_esq.y + i * esp_h }); posicoes.push({ x: canto_sup_dir.x, y: canto_sup_dir.y + i * esp_h }); } } posicoes.forEach(pos => draw.circle(phi_long).center(pos.x, pos.y).fill('#333')); draw.line(15, PADDING, 15, PADDING + dados.h).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow); draw.text(String(dados.h)).addClass('dim-text').move(25, PADDING + dados.h / 2).transform({ rotation: -90 }); draw.line(PADDING, 15, PADDING + dados.b, 15).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow); draw.text(String(dados.b)).addClass('dim-text').move(PADDING + dados.b / 2, 25).attr('text-anchor', 'middle'); } catch (e) { console.error("Erro ao desenhar SVG do pilar:", e); } });
+            </script>
+        {% endif %}
+    {% endif %}
+{% endblock %}

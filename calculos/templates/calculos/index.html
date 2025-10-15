@@ -1,0 +1,31 @@
+{% extends "calculos/base.html" %}
+{% load static %}
+
+{% block title %}Menu Principal - Cálculo Estrutural{% endblock %}
+
+{% block content %}
+    <div class="header-logo">
+        <h1>Análise e Dimensionamento de Elementos Estruturais</h1>
+    </div>
+    <p>Selecione o tipo de elemento que pretende dimensionar:</p>
+    
+    <a href="{% url 'viga_dimensionamento' %}" class="nav-card">
+        <i class="fa-solid fa-pen-ruler"></i> Dimensionar Viga
+    </a>
+    <a href="{% url 'pilar_dimensionamento' %}" class="nav-card">
+        <i class="fa-solid fa-building-columns"></i> Dimensionar Pilar
+    </a>
+    <a href="{% url 'sapata_dimensionamento' %}" class="nav-card">
+        <i class="fa-solid fa-layer-group"></i> Dimensionar Sapata
+    </a>
+    <a href="{% url 'historico_calculos' %}" class="nav-card">
+        <i class="fa-solid fa-clock-rotate-left"></i> Ver Histórico
+    </a>
+    <a href="{% url 'configuracao_sistema' %}" class="nav-card">
+        <i class="fa-solid fa-gears"></i> Configurar Sistema
+    </a>
+
+    <footer>
+        <p>Desenvolvido por Helder Marttinelle Dias Da Silva, 2025</p>
+    </footer>
+{% endblock %}

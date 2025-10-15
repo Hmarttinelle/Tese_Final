@@ -1,0 +1,63 @@
+{% extends "calculos/base.html" %}
+{% load static %}
+
+{% block title %}Histórico de Cálculos{% endblock %}
+
+{% block content %}
+    <a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
+    <h1>Histórico de Cálculos</h1>
+
+    {% if calculos %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Elemento</th>
+                        <th>Data</th>
+                        <th>Dados de Entrada (Resumo)</th>
+                        <th>Resultado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calculo in calculos %}
+                    <tr>
+                        <td><strong>{{ calculo.elemento }}</strong></td>
+                        <td>{{ calculo.timestamp|date:"d/m/Y H:i" }}</td>
+                        <td class="input-details">
+                            {% if calculo.elemento == 'Viga' %}
+                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed }} kNm
+                            {% elif calculo.elemento == 'Pilar' %}
+                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed }} kN<br>
+                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed }} kNm
+                            {% elif calculo.elemento == 'Sapata' %}
+                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed }} kN
+                            {% endif %}
+                        </td>
+                        <td class="result-details">
+                            {% if calculo.resultado_final.combinacao_final %}
+                                <strong>{{ calculo.resultado_final.combinacao_final }}</strong>
+                            {% elif calculo.resultado_final.dimensoes %}
+                                <strong>{{ calculo.resultado_final.dimensoes }}</strong>
+                            {% endif %}
+                        </td>
+                        <td style="display: flex; gap: 10px; align-items: center;">
+                            <a href="{% url 'historico_detalhe' calculo.id %}" class="btn-secundario" style="padding: 8px 12px; font-size: 0.9rem;" title="Ver Detalhes">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i> Detalhes
+                            </a>
+                            <form action="{% url 'historico_delete' calculo.id %}" method="post" onsubmit="return confirm('Tem a certeza de que deseja eliminar este registo?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-secundario" style="padding: 8px 12px; font-size: 0.9rem; background-color: #f8d7da; border-color: #f5c2c7; color: #842029;" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="no-history">Ainda não foi efetuado nenhum cálculo.</p>
+    {% endif %}
+{% endblock %}

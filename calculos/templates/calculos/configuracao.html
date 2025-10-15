@@ -1,0 +1,51 @@
+{% extends "calculos/base.html" %}
+{% load static %}
+
+{% block title %}Configurar Sistema{% endblock %}
+
+{% block content %}
+    <a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
+    <h1><i class="fa-solid fa-gears"></i> Configurar Sistema</h1>
+    <p>Altere as definições globais de aparência da aplicação.</p>
+
+    <form method="post" enctype="multipart/form-data" style="margin-top: 30px;">
+        {% csrf_token %}
+        
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="{{ form.theme_mode.id_for_label }}">{{ form.theme_mode.label }}</label>
+            {{ form.theme_mode }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.primary_color.id_for_label }}">{{ form.primary_color.label }}</label>
+            {{ form.primary_color }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.background_image.id_for_label }}">{{ form.background_image.label }}</label>
+            {{ form.background_image }}
+            {% if form.background_image.errors %}
+                <div style="color: red; font-size: 0.9rem; margin-top: 5px;">
+                    {% for error in form.background_image.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-actions" style="grid-column: 1 / -1;">
+            <button type="submit" class="btn-principal"><i class="fa-solid fa-save"></i> Guardar Alterações</button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Estilo específico para o seletor de cores para que ocupe a altura toda */
+    .form-control-color {
+        width: 100%;
+        height: 42px;
+        padding: .375rem .75rem;
+    }
+</style>
+{% endblock %}

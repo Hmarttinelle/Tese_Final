@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>{% block title %}Cálculo Estrutural{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'calculos/style.css' %}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    {% if system_config %}
+    <style>
+        :root {
+            {% if system_config.primary_color %}
+                --primary-color: {{ system_config.primary_color }};
+            {% endif %}
+        }
+    </style>
+    {% endif %}
+</head>
+
+<body class="{% if system_config.theme_mode == 'dark' %}dark-theme{% endif %}" {% if system_config and system_config.background_image %}style="background-image: url('{{ system_config.background_image.url }}'); background-size: cover; background-position: center; background-attachment: fixed;"{% endif %}>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
