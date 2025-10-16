@@ -14,8 +14,8 @@ class SystemConfigurationForm(forms.ModelForm):
         }
         
         widgets = {
-            'theme_mode': forms.Select(attrs={'class': 'form-control'}),
-            # Usamos um widget de Cor para que o navegador mostre um seletor de cores
+            # CORREÇÃO AQUI: Alterado de forms.Select para forms.RadioSelect
+            'theme_mode': forms.RadioSelect,
             'primary_color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color'}),
             'background_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }

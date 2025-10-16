@@ -1,0 +1,21 @@
+# Ficheiros e pastas do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+
+# Ficheiros do sistema operativo
+desktop.ini
+Thumbs.db
+.DS_Store
+
+# Ficheiros da base de dados
+*.sqlite3
+
+# Ficheiros de media (imagens carregadas pelos utilizadores)
+/media/
+
+# Ficheiros de IDEs (ex: Visual Studio Code)
+.vscode/

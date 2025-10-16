@@ -405,3 +405,171 @@ body.dark-theme .desenho-wrapper {
 body.dark-theme .table-container tr:nth-child(even) {
     background-color: #2a2a2a;
 }
+
+/* ============================================= */
+/* ESTILOS PARA O SPINNER DE CARREGAMENTO      */
+/* ============================================= */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none; /* Escondido por defeito */
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    border: 8px solid #f3f3f3; /* Cinza claro */
+    border-top: 8px solid var(--primary-color); /* Cor primária */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================= */
+/* PÁGINA DE CONFIGURAÇÃO                        */
+/* ============================================= */
+.config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.form-section {
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    padding: 20px 25px;
+}
+
+.form-section legend {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    padding: 0 10px;
+}
+
+/* --- Seletor de Tema --- */
+.theme-selector {
+    display: flex;
+    gap: 15px;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+}
+
+/* Esconde o botão de rádio original */
+.theme-option input[type="radio"] {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+}
+
+.theme-option label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: var(--light-gray);
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-option input[type="radio"]:checked + label {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.theme-option label:hover {
+    border-color: var(--primary-color);
+}
+
+body.dark-theme .theme-option label {
+    background-color: #555;
+    border-color: #777;
+}
+
+body.dark-theme .theme-option input[type="radio"]:checked + label {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+
+/* --- Seletor de Cor --- */
+.color-picker-wrapper {
+    position: relative;
+    width: 150px;
+}
+
+.color-picker-wrapper input[type="color"] {
+    width: 100%;
+    height: 42px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background: none;
+}
+
+/* Caixa de pré-visualização da cor */
+.color-picker-wrapper #color-preview {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    pointer-events: none; /* Permite clicar através dela */
+    z-index: -1;
+}
+
+/* --- Info da Imagem Atual --- */
+.current-image-info {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    color: #6c757d;
+}
+.current-image-info a {
+    color: var(--primary-color);
+}
+.form-error {
+    color: var(--error-text); 
+    font-size: 0.9rem; 
+    margin-top: 5px;
+}
+
+/* --- Pré-visualização da Imagem de Fundo --- */
+.image-preview-container {
+    margin-top: 15px;
+}
+
+.image-preview {
+    max-width: 100%;
+    height: auto;
+    max-height: 200px; /* Limita a altura da pré-visualização */
+    border-radius: var(--border-radius);
+    border: 1px solid var(--medium-gray);
+    margin-top: 5px;
+}
+
+.current-image-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}

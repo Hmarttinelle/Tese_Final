@@ -1,6 +1,5 @@
 # calculos/models.py
 from django.db import models
-import json
 
 class HistoricoCalculo(models.Model):
     ELEMENTO_CHOICES = [
@@ -11,21 +10,14 @@ class HistoricoCalculo(models.Model):
 
     elemento = models.CharField(max_length=10, choices=ELEMENTO_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
-    input_data = models.TextField()
-    resultado_final = models.TextField()
+    input_data = models.JSONField()
+    resultado_final = models.JSONField()
 
     def __str__(self):
         return f"{self.elemento} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
 
-
-    def get_input_data_dict(self):
-        try:
-            return json.loads(self.input_data)
-        except json.JSONDecodeError:
-            return {}
-
    
-    def get_resultado_final_dict(self):
+    # def get_resultado_final_dict(self):
         try:
             return json.loads(self.resultado_final)
         except json.JSONDecodeError:

@@ -1,10 +1,36 @@
 # calculos/views.py
 from django.shortcuts import render, redirect
-import json 
 from .services import viga_service, pilar_service, sapata_service
 from .models import HistoricoCalculo
 from .forms import SystemConfigurationForm
-from .models import SystemConfiguration 
+from .models import SystemConfiguration
+
+# ==============================================================================
+# FUNÇÃO AUXILIAR PARA GUARDAR HISTÓRICO
+# ==============================================================================
+
+def _salvar_calculo_no_historico(request, elemento, resultado):
+    """
+    Função auxiliar para guardar o resultado de um cálculo na base de dados.
+    """
+    if resultado.get('status') == 'Sucesso':
+        # request.POST é um QueryDict. Convertemos para um dicionário normal.
+        input_data_copy = request.POST.copy().dict()
+        
+        # O 'csrfmiddlewaretoken' não é relevante para o histórico, por isso removemo-lo
+        input_data_copy.pop('csrfmiddlewaretoken', None)
+
+        # Para sapatas, removemos os dados SVG que são muito grandes
+        resultado_final_para_db = resultado.copy()
+        if elemento == 'Sapata':
+            resultado_final_para_db.pop('desenho_planta_svg', None)
+            resultado_final_para_db.pop('desenho_corte_svg', None)
+        
+        HistoricoCalculo.objects.create(
+            elemento=elemento,
+            input_data=input_data_copy,
+            resultado_final=resultado_final_para_db
+        )
 
 # ==============================================================================
 # VIEWS DA APLICAÇÃO
@@ -30,13 +56,8 @@ def viga_view(request):
             resultado = viga_service.dimensionar_viga(b=b, h=h, f_ck=f_ck, f_yk=f_yk, M_Ed_kNm=M_Ed_kNm, c_nom=c_nom)
             context['resultado'] = resultado
 
-            # Se o cálculo foi um sucesso, guarda na base de dados
-            if resultado.get('status') == 'Sucesso':
-                HistoricoCalculo.objects.create(
-                    elemento='Viga',
-                    input_data=json.dumps(dict(request.POST)),
-                    resultado_final=json.dumps(resultado)
-                )
+            # Chama a função auxiliar para guardar no histórico
+            _salvar_calculo_no_historico(request, 'Viga', resultado)
 
         except (ValueError, TypeError) as e:
             context['resultado'] = {'status': 'Erro', 'mensagem': f'Erro no cálculo: {e}'}
@@ -67,19 +88,8 @@ def pilar_view(request):
             )
             context['resultado'] = resultado
 
-            # Se o cálculo foi um sucesso, guarda na base de dados
-            if resultado.get('status') == 'Sucesso':
-                # Criamos uma cópia dos dados de entrada para não modificar o original
-                input_data_copy = dict(request.POST)
-                # O 'csrfmiddlewaretoken' não é relevante para o histórico, por isso removemo-lo
-                input_data_copy.pop('csrfmiddlewaretoken', None)
-                
-                HistoricoCalculo.objects.create(
-                    elemento='Pilar',
-                    input_data=json.dumps(input_data_copy),
-                    resultado_final=json.dumps(resultado)
-                )
-            # ^^^^^^^^^^^^^^^^ FIM DO NOVO CÓDIGO ^^^^^^^^^^^^^^^
+            # Chama a função auxiliar para guardar no histórico
+            _salvar_calculo_no_historico(request, 'Pilar', resultado)
 
         except (ValueError, TypeError, ZeroDivisionError) as e:
             context['resultado'] = {'status': 'Erro', 'mensagem': f'Erro: {e}. Verifique os valores de entrada.'}
@@ -105,21 +115,8 @@ def sapata_view(request):
             )
             context['resultado'] = resultado
 
-            # Se o cálculo foi um sucesso, guarda na base de dados
-            if resultado.get('status') == 'Sucesso':
-                input_data_copy = dict(request.POST)
-                input_data_copy.pop('csrfmiddlewaretoken', None)
-
-                # Os dados de desenho em SVG são muito grandes e não precisam de ser guardados
-                resultado_sem_svg = resultado.copy()
-                resultado_sem_svg.pop('desenho_planta_svg', None)
-                resultado_sem_svg.pop('desenho_corte_svg', None)
-                
-                HistoricoCalculo.objects.create(
-                    elemento='Sapata',
-                    input_data=json.dumps(input_data_copy),
-                    resultado_final=json.dumps(resultado_sem_svg)
-                )
+            # Chama a função auxiliar para guardar no histórico
+            _salvar_calculo_no_historico(request, 'Sapata', resultado)
 
         except (ValueError, TypeError, ZeroDivisionError) as e:
             context['resultado'] = {'status': 'Erro', 'mensagem': f'Erro: {e}. Verifique os valores de entrada.'}
@@ -128,60 +125,31 @@ def sapata_view(request):
 
 # --- VIEW PARA HISTORICO ---
 def historico_view(request):
-    """
-    Busca todos os cálculos guardados na base de dados e envia-os para a página de histórico.
-    """
-    # 1. Busca todos os objetos do HistoricoCalculo, ordenados pelos mais recentes primeiro.
     todos_os_calculos = HistoricoCalculo.objects.all().order_by('-timestamp')
-    
-    # 2. Prepara os dados para serem facilmente lidos no template
-    #    (converte o texto JSON de volta para dicionários)
-    calculos_processados = []
-    for calculo in todos_os_calculos:
-        calculos_processados.append({
-            'id': calculo.id,
-            'elemento': calculo.elemento,
-            'timestamp': calculo.timestamp,
-            'input_data': calculo.get_input_data_dict(),
-            'resultado_final': calculo.get_resultado_final_dict()
-        })
-
-    # 3. Define o contexto que será enviado para o template
-    context = {
-        'calculos': calculos_processados
-    }
-    
-    # 4. Renderiza a nova página de histórico com os dados
+    context = {'calculos': todos_os_calculos}
     return render(request, 'calculos/historico.html', context)
 
 # --- VIEW PARA HISTORICO_DETALHE ---
 def historico_detalhe_view(request, calculo_id):
-    """
-    Mostra os detalhes de um cálculo específico do histórico,
-    incluindo os desenhos (se aplicável) e dados de entrada formatados.
-    """
     try:
         calculo = HistoricoCalculo.objects.get(id=calculo_id)
         
-        # Prepara os dados para o template
-        resultado_final = calculo.get_resultado_final_dict()
-        input_data = calculo.get_input_data_dict()
+        resultado_final = calculo.resultado_final
+        input_data = calculo.input_data
         
         context = {
             'calculo': {
                 'id': calculo.id,
                 'elemento': calculo.elemento,
                 'timestamp': calculo.timestamp,
-                'resultado_final': resultado_final
+                'resultado_final': resultado_final,
             }
         }
 
-        # --- MELHORIA 1: Gerar desenhos novamente ---
         if calculo.elemento == 'Sapata' and 'dados_desenho' in resultado_final:
             context['calculo']['desenho_planta_svg'] = sapata_service.desenhar_sapata_planta_svg(resultado_final['dados_desenho'])
             context['calculo']['desenho_corte_svg'] = sapata_service.desenhar_sapata_corte_svg(resultado_final['dados_desenho'])
 
-        # --- MELHORIA 2: Formatar dados de entrada com símbolos ---
         INPUT_MAP = {
             'b': {'label': 'Largura', 'symbol': 'b', 'unit': 'mm'},
             'h': {'label': 'Altura', 'symbol': 'h', 'unit': 'mm'},
@@ -201,6 +169,7 @@ def historico_detalhe_view(request, calculo_id):
         }
         
         input_formatado = []
+        # CORREÇÃO: Iterar sobre um dicionário normal, não um QueryDict
         for key, value in input_data.items():
             if key in INPUT_MAP:
                 info = INPUT_MAP[key]
@@ -220,35 +189,25 @@ def historico_detalhe_view(request, calculo_id):
 
 # --- VIEW PARA DELETAR HISTORICO ---
 def historico_delete_view(request, calculo_id):
-    """
-    Encontra um cálculo pelo seu ID e elimina-o da base de dados.
-    """
-    # Usamos um bloco try/except para o caso de o cálculo já ter sido eliminado.
     try:
         calculo = HistoricoCalculo.objects.get(id=calculo_id)
         calculo.delete()
     except HistoricoCalculo.DoesNotExist:
-        # Se não encontrar, não faz nada, apenas continua.
         pass
     
-    # Redireciona o utilizador de volta para a página de histórico.
     return redirect('historico_calculos')
 
 
 # --- VIEW DE CONFIGURAÇÕES ---
 def configuracao_view(request):
-    # Usamos .get_or_create() para garantir que temos sempre um objeto de configuração.
-    # Ele tenta obter o primeiro objeto. Se não existir, cria um.
     config, created = SystemConfiguration.objects.get_or_create(id=1)
 
     if request.method == 'POST':
-        # Se o formulário for submetido, preenchemo-lo com os dados enviados (e os ficheiros)
         form = SystemConfigurationForm(request.POST, request.FILES, instance=config)
         if form.is_valid():
-            form.save() # Guarda a imagem carregada
-            return redirect('pagina_inicial') # Redireciona para o menu principal após guardar
+            form.save()
+            return redirect('pagina_inicial')
     else:
-        # Se for um pedido GET, apenas mostramos o formulário ligado à configuração existente
         form = SystemConfigurationForm(instance=config)
 
     return render(request, 'calculos/configuracao.html', {'form': form})
