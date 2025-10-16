@@ -2,7 +2,7 @@
 import math
 
 # ==============================================================================
-# FUNÇÕES AUXILIARES (Copiadas 100% do seu views.py original)
+# FUNÇÕES AUXILIARES PARA ENCONTRAR COMBINAÇÃO DE BARRAS OTIMIZADAS
 # ==============================================================================
 
 def encontrar_combinacao_barras_otima(As_req_cm2, b_mm, c_nom_mm, phi_estribo_mm):
@@ -22,6 +22,10 @@ def encontrar_combinacao_barras_otima(As_req_cm2, b_mm, c_nom_mm, phi_estribo_mm
     if not solucoes_validas: return (0, 0, 0, "Nenhuma combinação de armadura coube numa única camada.")
     solucao_otima = min(solucoes_validas, key=lambda x: x['area_total'])
     return (solucao_otima['n_barras'], solucao_otima['diametro'], solucao_otima['area_total'], solucao_otima['verificacao'])
+
+# ==============================================================================
+# FUNÇÕES AUXILIARES PARA DESENHOS
+# ==============================================================================
 
 def desenhar_sapata_planta_svg(dados_desenho):
     A = dados_desenho['A_m']
@@ -89,7 +93,7 @@ def desenhar_sapata_corte_svg(dados_desenho):
     return svg
 
 # ==============================================================================
-# FUNÇÃO PRINCIPAL DE DIMENSIONAMENTO (CÓPIA FIEL DO views.py)
+# FUNÇÃO PRINCIPAL DE DIMENSIONAMENTO 
 # ==============================================================================
 def dimensionar_sapata(sigma_adm_kpa, f_ck, f_yk, c_nom_mm, bp_mm, hp_mm, N_Ed_kN, M_Edy_kNm):
     passos = []

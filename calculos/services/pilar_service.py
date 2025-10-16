@@ -2,7 +2,7 @@
 import math
 
 # ==============================================================================
-# FUNÇÕES AUXILIARES (Copiadas 100% do seu views.py original)
+# FUNÇÕES AUXILIARES PARA ENCONTRAR COMBINAÇÃO DE BARRAS OTIMIZADAS
 # ==============================================================================
 
 def encontrar_combinacao_barras_pilar(As_req_cm2, b_mm, h_mm, c_nom_mm, phi_estribo_mm):
@@ -82,7 +82,7 @@ def _dimensionar_pilar_rigoroso(b_mm, h_mm, f_cd_mpa, f_yd_mpa, N_Ed_N, M_Ed_tot
     raise ValueError("O algoritmo de dimensionamento do pilar não convergiu.")
 
 # ==============================================================================
-# FUNÇÃO PRINCIPAL DE DIMENSIONAMENTO (CÓPIA FIEL DO views.py)
+# FUNÇÃO PRINCIPAL DE DIMENSIONAMENTO 
 # ==============================================================================
 def dimensionar_pilar(b_mm, h_mm, l_m, lig_topo, lig_base, f_ck, f_yk, N_Ed_kN, M0_Ed_kNm, c_nom_mm, phi_ef):
     passos = []

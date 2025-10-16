@@ -2,7 +2,7 @@
 import math
 
 # ==============================================================================
-# FUNÇÕES AUXILIARES
+# FUNÇÕES AUXILIARES PARA ENCONTRAR COMBINAÇÃO DE BARRAS OTIMIZADAS
 # ==============================================================================
 def encontrar_combinacao_barras_otima(As_req_cm2, b_mm, c_nom_mm, phi_estribo_mm):
     """
