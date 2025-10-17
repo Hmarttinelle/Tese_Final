@@ -6,8 +6,4 @@ tzdata==2025.2
 weasyprint==65.1
 whitenoise==6.9.0
 gunicorn==23.0.0
-<<<<<<< HEAD
 Pillow==11.0.0
-=======
-Pillow==11.0.0
->>>>>>> afd5b2f050d7fd991e40f6dcedaa3a440be4cd6d
