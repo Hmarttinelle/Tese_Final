@@ -1,10 +1,10 @@
 # Calculadora de Dimensionamento Estrutural (Eurocódigo 2)
 
-Este projeto é uma aplicação web desenvolvida em Django, criada no âmbito de uma Diseertação para mestrado em IPV. A sua principal função é auxiliar no dimensionamento de elementos estruturais de betão armado, seguindo as diretrizes da norma portuguesa **NP EN 1992-1-1:2010 (Eurocódigo 2)**.
+Este projeto é uma aplicação web desenvolvida em Django, criada no âmbito da minha Diseertação para mestrado em IPV. A sua principal função é auxiliar no dimensionamento de elementos estruturais de betão armado, seguindo as diretrizes da norma portuguesa **NP EN 1992-1-1:2010 (Eurocódigo 2)**.
 
 A ferramenta permite a engenheiros e estudantes de engenharia civil realizar cálculos de forma rápida e precisa, gerando memórias de cálculo detalhadas e representações gráficas das secções.
 
-![Screenshot da Página Principal]("C:\Users\helde\Desktop\Pdf enviado ao orientador\Menu Inicial.png")
+![Screenshot da Página Principal]("https://mega.nz/file/RYhxEaSC#EtDIc26WJD1hCMtGeKN2R1uwa6Ctg67QJDDOyjUX084")
 
 ## Funcionalidades Principais
 
