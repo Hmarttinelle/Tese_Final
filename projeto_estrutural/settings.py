@@ -31,8 +31,7 @@ SECRET_KEY='django-insecure-az(0*9m(dq_6l!p04%a+ydn*teowdwr9xt_v&@7u$#@c+(p@if'
 # O valor 'False' é o padrão se a variável não for encontrada'
 DEBUG=True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pv27108.pythonanywhere.com']
 
 # Application definition
 
