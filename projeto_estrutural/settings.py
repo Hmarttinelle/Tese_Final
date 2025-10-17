@@ -134,3 +134,6 @@ MEDIA_URL = '/media/'
 
 # Define o caminho no seu computador onde os ficheiros carregados serão guardados
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Caminho para onde o comando collectstatic irá juntar todos os ficheiros estáticos
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
