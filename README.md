@@ -4,7 +4,7 @@ Este projeto é uma aplicação web desenvolvida em Django, criada no âmbito da
 
 A ferramenta permite a engenheiros e estudantes de engenharia civil realizar cálculos de forma rápida e precisa, gerando memórias de cálculo detalhadas e representações gráficas das secções.
 
-![Screenshot da Página Principal]("https://mega.nz/file/RYhxEaSC#EtDIc26WJD1hCMtGeKN2R1uwa6Ctg67QJDDOyjUX084")
+![Screenshot da Página Principal](docs/images/menu_principal.png)
 
 ## Funcionalidades Principais
 
