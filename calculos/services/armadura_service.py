@@ -80,3 +80,66 @@ def encontrar_combinacoes_otimas(As_req_cm2, largura_disponivel_mm):
         "unica": melhor_unica,
         "mista": melhor_mista
     }
+
+# ==============================================================================
+# NOVA FUNÇÃO, ESPECÍFICA PARA PILARES
+# ==============================================================================
+
+def encontrar_combinacoes_otimas_pilar(As_req_cm2, largura_disponivel_mm):
+    """
+    Encontra a melhor combinação de armadura para PILARES, garantindo um número
+    par de varões para manter a simetria (mínimo de 4 varões).
+    """
+    solucoes_unicas = []
+    solucoes_mistas = []
+    diametros = sorted(list(VERGALHOES_PADRAO.keys()))
+
+    max_barras = 8 
+    
+    # A ALTERAÇÃO PRINCIPAL ESTÁ AQUI: O loop agora só itera sobre números pares (4, 6, 8)
+    for num_barras in range(4, max_barras + 1, 2):
+        
+        # 1. Combinações de diâmetro único (ex: 4Ø12, 6Ø12, etc.)
+        for diametro in diametros:
+            comb = tuple([diametro] * num_barras)
+            if _verificar_espacamento(comb, largura_disponivel_mm):
+                area_total_cm2 = sum(VERGALHOES_PADRAO[d] for d in comb)
+                if area_total_cm2 >= As_req_cm2:
+                    combinacao_str = f"{num_barras} Ø {diametro}"
+                    solucoes_unicas.append({"combinacao_str": combinacao_str, "area_total_cm2": area_total_cm2})
+
+        # 2. Combinações de diâmetros mistos (simétricas)
+        # Ex: 2ØD1 + 2ØD2 (para 4 varões), 2ØD1 + 4ØD2 (para 6 varões), etc.
+        pares_de_diametros = list(combinations_with_replacement(diametros, 2))
+        for d1, d2 in pares_de_diametros:
+            if d1 == d2: continue
+            
+            # Gera splits simétricos. Ex: para 6 barras -> 2+4; para 8 barras -> 2+6 e 4+4
+            for i in range(1, num_barras // 2 + 1):
+                n1 = i * 2
+                n2 = num_barras - n1
+                if n2 == 0: continue
+                if n1 > n2: continue # Evita duplicados como 6+2 depois de 2+6
+                
+                comb = tuple(sorted([d1]*n1 + [d2]*n2))
+                if _verificar_espacamento(comb, largura_disponivel_mm):
+                    area_total_cm2 = sum(VERGALHOES_PADRAO[d] for d in comb)
+                    if area_total_cm2 >= As_req_cm2:
+                        counts = {d: comb.count(d) for d in set(comb)}
+                        combinacao_str = " + ".join([f"{count} Ø {diam}" for diam, count in sorted(counts.items())])
+                        solucoes_mistas.append({"combinacao_str": combinacao_str, "area_total_cm2": area_total_cm2})
+
+
+    # Encontra a melhor solução de cada categoria
+    melhor_unica = min(solucoes_unicas, key=lambda x: x["area_total_cm2"]) if solucoes_unicas else None
+    melhor_mista = min(solucoes_mistas, key=lambda x: x["area_total_cm2"]) if solucoes_mistas else None
+
+    if melhor_unica:
+        melhor_unica["As_final_cm2"] = round(melhor_unica["area_total_cm2"], 2)
+    if melhor_mista:
+        melhor_mista["As_final_cm2"] = round(melhor_mista["area_total_cm2"], 2)
+
+    return {
+        "unica": melhor_unica,
+        "mista": melhor_mista
+    }

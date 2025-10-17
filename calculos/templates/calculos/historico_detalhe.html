@@ -46,20 +46,14 @@
         
         {% if calculo.resultado_final.dados_desenho %}
         <div class="desenhos-container" style="margin-top: 15px; text-align: center; page-break-inside: avoid;">
-            {% if calculo.elemento == 'Viga' %}
+            {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
             <div class="desenho-wrapper">
                 <h4>Representação Gráfica da Secção</h4>
-                <div id="desenho-viga-container" style="max-width: 400px; margin: 20px auto 0; width: 100%; height: auto; aspect-ratio: {{ calculo.resultado_final.dados_desenho.b|add:150 }} / {{ calculo.resultado_final.dados_desenho.h|add:150 }};"></div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-viga-container', 'desenho_viga.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
+                <div id="desenho-container" style="max-width: 400px; margin: 20px auto 0;">
+                    {{ calculo.desenho_svg|safe }}
                 </div>
-            </div>
-            {% elif calculo.elemento == 'Pilar' %}
-            <div class="desenho-wrapper">
-                <h4>Representação Gráfica da Secção</h4>
-                <div id="desenho-pilar-container" style="max-width: 400px; margin: 20px auto 0; width: 100%; height: auto; aspect-ratio: {{ calculo.resultado_final.dados_desenho.b|add:150 }} / {{ calculo.resultado_final.dados_desenho.h|add:150 }};"></div>
                 <div style="text-align: center; margin-top: 15px;">
-                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-pilar-container', 'desenho_pilar.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
+                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-container', 'desenho_{{ calculo.elemento|lower }}.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
                 </div>
             </div>
             {% elif calculo.elemento == 'Sapata' %}
@@ -100,6 +94,7 @@
 
 {% block scripts %}
     <script>
+        // Função para exportar SVG
         function exportarSVG(containerId, filename) {
             const container = document.getElementById(containerId);
             if (!container) { console.error("Contentor do SVG não encontrado:", containerId); return; }
@@ -124,18 +119,4 @@
             URL.revokeObjectURL(url);
         }
     </script>
-    
-    {% if calculo.resultado_final.dados_desenho and calculo.resultado_final.status == 'Sucesso' %}
-        {% if calculo.elemento == 'Viga' %}
-            {{ calculo.resultado_final.dados_desenho|json_script:"json-dados-viga" }}
-            <script>
-                // ... (scripts de desenho inalterados) ...
-            </script>
-        {% elif calculo.elemento == 'Pilar' %}
-            {{ calculo.resultado_final.dados_desenho|json_script:"json-dados-pilar" }}
-            <script>
-                // ... (scripts de desenho inalterados) ...
-            </script>
-        {% endif %}
-    {% endif %}
 {% endblock %}

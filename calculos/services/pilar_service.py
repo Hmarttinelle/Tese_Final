@@ -3,6 +3,68 @@ import math
 from . import armadura_service
 
 # ==============================================================================
+# NOVA FUNÇÃO PARA DESENHAR O PILAR EM SVG
+# ==============================================================================
+
+def desenhar_pilar_svg(dados_desenho):
+    """
+    Gera uma representação SVG da secção transversal de um pilar.
+    """
+    b = dados_desenho.get('b', 300)
+    h = dados_desenho.get('h', 400)
+    c_nom = dados_desenho.get('c_nom', 35)
+    phi_estribo = dados_desenho.get('phi_estribo', 8)
+    n_barras = dados_desenho.get('n_barras', 4)
+    phi_long = dados_desenho.get('phi_long', 16)
+
+    PADDING = 60
+    viewbox_width = b + PADDING * 2
+    viewbox_height = h + PADDING * 2
+
+    svg = f'<svg width="100%" viewBox="0 0 {viewbox_width} {viewbox_height}" xmlns="http://www.w3.org/2000/svg">'
+    svg += '<style>.dim-text { font-family: Arial, sans-serif; font-size: 14px; fill: #333; text-anchor: middle; }</style>'
+
+    svg += f'<rect x="{PADDING}" y="{PADDING}" width="{b}" height="{h}" fill="#e0e0e0" stroke="#555" stroke-width="2"/>'
+
+    estribo_x = PADDING + c_nom
+    estribo_y = PADDING + c_nom
+    estribo_w = b - 2 * c_nom
+    estribo_h = h - 2 * c_nom
+    raio_curvatura_estribo = phi_estribo * 2
+    svg += f'<rect x="{estribo_x}" y="{estribo_y}" width="{estribo_w}" height="{estribo_h}" fill="none" stroke="#777" stroke-width="{phi_estribo / 2}" rx="{raio_curvatura_estribo}" ry="{raio_curvatura_estribo}"/>'
+
+    if n_barras > 0 and phi_long > 0:
+        # Posições dos varões
+        canto_sup_esq = (estribo_x + phi_long/2, estribo_y + phi_long/2)
+        canto_sup_dir = (estribo_x + estribo_w - phi_long/2, estribo_y + phi_long/2)
+        canto_inf_esq = (estribo_x + phi_long/2, estribo_y + estribo_h - phi_long/2)
+        canto_inf_dir = (estribo_x + estribo_w - phi_long/2, estribo_y + estribo_h - phi_long/2)
+
+        posicoes = [canto_sup_esq, canto_sup_dir, canto_inf_esq, canto_inf_dir]
+
+        # Varões intermédios (se existirem)
+        barras_restantes = n_barras - 4
+        if barras_restantes > 0:
+            n_inter_h = math.ceil(barras_restantes / 2)
+            esp_h = (estribo_h - phi_long) / (n_inter_h + 1)
+            for i in range(1, n_inter_h + 1):
+                posicoes.append((canto_sup_esq[0], canto_sup_esq[1] + i * esp_h))
+                posicoes.append((canto_sup_dir[0], canto_sup_dir[1] + i * esp_h))
+
+        for x, y in posicoes[:n_barras]:
+            svg += f'<circle cx="{x}" cy="{y}" r="{phi_long/2}" fill="#333"/>'
+
+
+    # Cotas
+    svg += f'<path d="M {PADDING/4} {PADDING} L {PADDING*3/4} {PADDING} M {PADDING/2} {PADDING} L {PADDING/2} {PADDING+h} M {PADDING/4} {PADDING+h} L {PADDING*3/4} {PADDING+h}" stroke="#333" stroke-width="1" fill="none"/>'
+    svg += f'<text x="{PADDING/2 - 10}" y="{PADDING + h/2}" class="dim-text" transform="rotate(-90, {PADDING/2 - 10}, {PADDING + h/2})">{h}</text>'
+    svg += f'<path d="M {PADDING} {PADDING/4} L {PADDING} {PADDING*3/4} M {PADDING} {PADDING/2} L {PADDING+b} {PADDING/2} M {PADDING+b} {PADDING/4} L {PADDING+b} {PADDING*3/4}" stroke="#333" stroke-width="1" fill="none"/>'
+    svg += f'<text x="{PADDING + b/2}" y="{PADDING/2 - 10}" class="dim-text">{b}</text>'
+
+    svg += '</svg>'
+    return svg
+
+# ==============================================================================
 # FUNÇÃO AUXILIAR RIGOROSA (INALTRADA)
 # ==============================================================================
 
@@ -69,7 +131,8 @@ def dimensionar_pilar(b_mm, h_mm, l_m, lig_topo, lig_base, f_ck, f_yk, N_Ed_kN, 
     passos = []
     phi_estribo = 8.0
     
-    # --- Secção 1 a 5 (Cálculo de Esforços - inalterado) ---
+    # --- Secção 1 a 7 (Cálculos de esforços e área de aço mínima - inalterados) ---
+    # ... (todo o código até à secção 8 permanece igual) ...
     casos_beta = {"encab-encab": 0.7, "encab-artic": 0.85, "encab-livre": 2.2, "artic-encab": 0.85, "artic-artic": 1.0, "livre-encab": 2.2}
     caso = f"{lig_topo}-{lig_base}"
     beta = casos_beta.get(caso, 1.0)
@@ -131,11 +194,7 @@ def dimensionar_pilar(b_mm, h_mm, l_m, lig_topo, lig_base, f_ck, f_yk, N_Ed_kN, 
     momento_2a_ordem = M_Ed_total_Nm - M0_Ed_Nm
     calculo_m_final = f"M_Ed,total = {M0_Ed_kNm:.2f} + {momento_2a_ordem/1000:.2f} = {M_Ed_total_Nm/1000:.2f} kNm"
     passos.append({"titulo": "5. Esforços Finais de Dimensionamento", "formula": r"M_{Ed,total} = M_{0Ed} + M_{2}", "calculo": calculo_m_final})
-
-    # --- Secção 6 (Cálculo da Área de Aço) ---
     As_req_mm2_final = _dimensionar_pilar_rigoroso(b_mm, h_mm, f_cd_mpa, f_yd_mpa, N_Ed_N, M_Ed_total_Nm, c_nom_mm, passos)
-
-    # --- Secção 7 (Verificação de Mínimos) - REINSERIDO ---
     As_min_cm2_1 = 0.10 * N_Ed_N / f_yd_mpa / 100
     As_min_cm2_2 = 0.002 * Ac_mm2 / 100
     As_min_cm2 = max(As_min_cm2_1, As_min_cm2_2)
@@ -145,7 +204,9 @@ def dimensionar_pilar(b_mm, h_mm, l_m, lig_topo, lig_base, f_ck, f_yk, N_Ed_kN, 
 
     # --- Secção 8 (Escolha da Armadura Final) ---
     largura_disponivel = h_mm - 2 * c_nom_mm - 2 * phi_estribo
-    solucoes = armadura_service.encontrar_combinacoes_otimas(As_final_req_cm2, largura_disponivel)
+    
+    # ALTERAÇÃO AQUI: Chamar a nova função específica para pilares
+    solucoes = armadura_service.encontrar_combinacoes_otimas_pilar(As_final_req_cm2, largura_disponivel)
     
     solucao_unica = solucoes.get('unica')
     solucao_mista = solucoes.get('mista')
@@ -153,7 +214,6 @@ def dimensionar_pilar(b_mm, h_mm, l_m, lig_topo, lig_base, f_ck, f_yk, N_Ed_kN, 
     if not solucao_unica and not solucao_mista:
         raise ValueError("Não foi possível encontrar uma combinação de armadura válida que coubesse na secção.")
 
-    # Determinar a solução principal
     if solucao_unica and solucao_mista:
         solucao_principal = min([solucao_unica, solucao_mista], key=lambda x: x['area_total_cm2'])
     else:

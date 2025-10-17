@@ -110,10 +110,12 @@
         </div>
 
         <div class="resultado-detalhado">
-            {% if resultado.dados_desenho %}
+            {% if resultado.desenho_svg %}
             <div class="desenho-wrapper">
                 <h4>Representação Gráfica da Secção</h4>
-                <div id="desenho-pilar-container" style="max-width: 400px; margin: 20px auto 0; width: 100%; height: auto; aspect-ratio: {{ resultado.dados_desenho.b|add:150 }} / {{ resultado.dados_desenho.h|add:150 }};"></div>
+                <div id="desenho-pilar-container" style="max-width: 400px; margin: 20px auto 0;">
+                    {{ resultado.desenho_svg|safe }}
+                </div>
                 <div style="text-align: center; margin-top: 15px;">
                     <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-pilar-container', 'desenho_pilar.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
                 </div>
@@ -148,7 +150,6 @@
                 });
             }
 
-            // Script para os seletores visuais de ligação
             const radioGroups = document.querySelectorAll('.ligacao-options');
             radioGroups.forEach(group => {
                 group.addEventListener('change', function(event) {
@@ -186,47 +187,6 @@
             URL.revokeObjectURL(url);
         }
     </script>
-    
-    {% if resultado.dados_desenho and resultado.status == 'Sucesso' %}
-        {{ resultado.dados_desenho|json_script:"json-dados-pilar" }}
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                try {
-                    const dados = JSON.parse(document.getElementById('json-dados-pilar').textContent);
-                    const container = document.getElementById('desenho-pilar-container');
-                    if (!dados || !container) return;
-                    container.innerHTML = '';
-                    const PADDING = 60; const viewboxWidth = dados.b + PADDING * 2; const viewboxHeight = dados.h + PADDING * 2;
-                    const draw = SVG().addTo(container).size('100%', '100%').viewbox(0, 0, viewboxWidth, viewboxHeight);
-                    const arrow = draw.marker(10, 10, function(add) { add.path('M0,0 L10,5 L0,10 Z').fill('#333'); });
-                    draw.rect(dados.b, dados.h).move(PADDING, PADDING).fill('#e0e0e0').stroke({ width: 2, color: '#555' });
-                    const estriboX = PADDING + dados.c_nom; const estriboY = PADDING + dados.c_nom;
-                    const estriboW = dados.b - 2 * dados.c_nom; const estriboH = dados.h - 2 * dados.c_nom;
-                    draw.rect(estriboW, estriboH).move(estriboX, estriboY).fill('none').stroke({ width: dados.phi_estribo / 2, color: '#777' }).radius(dados.phi_estribo * 2);
-                    const posicoes = []; const n_total = dados.n_barras; const phi_long = dados.phi_long;
-                    const canto_sup_esq = { x: estriboX + phi_long/2, y: estriboY + phi_long/2 };
-                    const canto_sup_dir = { x: estriboX + estriboW - phi_long/2, y: estriboY + phi_long/2 };
-                    const canto_inf_esq = { x: estriboX + phi_long/2, y: estriboY + estriboH - phi_long/2 };
-                    const canto_inf_dir = { x: estriboX + estriboW - phi_long/2, y: estriboY + estriboH - phi_long/2 };
-                    posicoes.push(canto_sup_esq, canto_sup_dir, canto_inf_esq, canto_inf_dir);
-                    const n_inter_h = Math.ceil(n_total/2) - 2;
-                    if (n_inter_h > 0) {
-                        const esp_h = (estriboH - phi_long) / (n_inter_h + 1);
-                        for (let i = 1; i <= n_inter_h; i++) {
-                            posicoes.push({ x: canto_sup_esq.x, y: canto_sup_esq.y + i * esp_h });
-                            posicoes.push({ x: canto_sup_dir.x, y: canto_sup_dir.y + i * esp_h });
-                        }
-                    }
-                    posicoes.forEach(pos => draw.circle(phi_long).center(pos.x, pos.y).fill('#333'));
-                    draw.line(15, PADDING, 15, PADDING + dados.h).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow);
-                    draw.text(String(dados.h)).addClass('dim-text').move(25, PADDING + dados.h / 2).transform({ rotation: -90 });
-                    draw.line(PADDING, 15, PADDING + dados.b, 15).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow);
-                    draw.text(String(dados.b)).addClass('dim-text').move(PADDING + dados.b / 2, 25).attr('text-anchor', 'middle');
-                } catch (e) { console.error("Erro ao desenhar SVG do pilar:", e); }
-            });
-        </script>
-    {% endif %}
-
     <script>
         document.getElementById('limparBtn').addEventListener('click', function() {
             const form = this.closest('form');
@@ -237,13 +197,11 @@
             form.querySelector('input[name="M_Ed"]').value = '';
             form.querySelector('input[name="c_nom"]').value = '';
             form.querySelector('input[name="phi_ef"]').value = '';
-            // Resetar seletores visuais
             const radios = form.querySelectorAll('.ligacao-options input[type="radio"]');
             radios.forEach(radio => {
                 radio.checked = false;
                 radio.parentElement.classList.remove('active');
             });
-            // Opcional: Re-selecionar os defaults
             form.querySelector('input[name="lig_topo"][value="artic"]').checked = true;
             form.querySelector('input[name="lig_topo"][value="artic"]').parentElement.classList.add('active');
             form.querySelector('input[name="lig_base"][value="encab"]').checked = true;

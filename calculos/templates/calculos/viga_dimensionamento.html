@@ -15,8 +15,14 @@
         <div class="form-group">
             <label>Classe do Betão:</label>
             <select name="f_ck">
+                <option value="16" {% if input_data.f_ck == '16' %}selected{% endif %}>C16/20</option>
+                <option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option>
                 <option value="25" {% if input_data.f_ck == '25' or not input_data.f_ck %}selected{% endif %}>C25/30</option>
-                </select>
+                <option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option>
+                <option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option>
+                <option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option>
+                <option value="50" {% if input_data.f_ck == '50' %}selected{% endif %}>C50/60</option>
+            </select>
         </div>
         <div class="form-group">
             <label>Classe do Aço:</label>
@@ -60,10 +66,12 @@
         </div>
 
         <div class="resultado-detalhado">
-            {% if resultado.dados_desenho %}
+            {% if resultado.desenho_svg %}
             <div class="desenho-wrapper">
                 <h4>Representação Gráfica da Secção</h4>
-                <div id="desenho-container" style="max-width: 400px; margin: 20px auto 0; width: 100%; height: auto; aspect-ratio: {{ resultado.dados_desenho.b|add:150 }} / {{ resultado.dados_desenho.h|add:150 }};"></div>
+                <div id="desenho-container" style="max-width: 400px; margin: 20px auto 0;">
+                    {{ resultado.desenho_svg|safe }}
+                </div>
                 <div style="text-align: center; margin-top: 15px;">
                     <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-container', 'desenho_viga.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
                 </div>
@@ -125,25 +133,15 @@
             URL.revokeObjectURL(url);
         }
     </script>
-    {% if resultado.dados_desenho and resultado.status == 'Sucesso' %}
-        {{ resultado.dados_desenho|json_script:"json-dados-desenho" }}
-        <script>
-            // Script de desenho da viga
-            document.addEventListener('DOMContentLoaded', function() {
-                try { const dados = JSON.parse(document.getElementById('json-dados-desenho').textContent); const container = document.getElementById('desenho-container'); if (!dados || !container) return; container.innerHTML = ''; const PADDING = 60; const viewboxWidth = dados.b + PADDING * 2; const viewboxHeight = dados.h + PADDING * 2; const draw = SVG().addTo(container).size('100%', '100%').viewbox(0, 0, viewboxWidth, viewboxHeight); const arrow = draw.marker(10, 10, function(add) { add.path('M0,0 L10,5 L0,10 Z').fill('#333'); }); draw.rect(dados.b, dados.h).move(PADDING, PADDING).fill('#e0e0e0').stroke({ width: 2, color: '#555' }); const estriboX = PADDING + dados.c_nom; const estriboY = PADDING + dados.c_nom; const estriboW = dados.b - 2 * dados.c_nom; const estriboH = dados.h - 2 * dados.c_nom; draw.rect(estriboW, estriboH).move(estriboX, estriboY).fill('none').stroke({ width: dados.phi_estribo / 4, color: '#777' }).radius(dados.phi_estribo * 2); const n_barras = dados.n_barras; const phi_long = dados.phi_long; const y_pos_inf = PADDING + dados.h - dados.c_nom - dados.phi_estribo - (phi_long / 2); const startX_inf = estriboX + (dados.phi_estribo / 2) + (phi_long / 2); const availableWidth = estriboW - dados.phi_estribo - phi_long; const varoes_inf = []; for (let i = 0; i < n_barras; i++) { let x_pos = startX_inf; if (n_barras > 1) { x_pos += i * (availableWidth / (n_barras - 1)); } draw.circle(phi_long).center(x_pos, y_pos_inf).fill('#333'); varoes_inf.push({x: x_pos, y: y_pos_inf}); } const n_barras_sup = 2; const phi_sup = 10; const y_pos_sup = PADDING + dados.c_nom + dados.phi_estribo + (phi_sup / 2); const x1_pos_sup = estriboX + (dados.phi_estribo / 2) + (phi_sup / 2); const x2_pos_sup = estriboX + estriboW - (dados.phi_estribo / 2) - (phi_sup / 2); draw.circle(phi_sup).center(x1_pos_sup, y_pos_sup).fill('#333'); draw.circle(phi_sup).center(x2_pos_sup, y_pos_sup).fill('#333'); draw.line(15, PADDING, 15, PADDING + dados.h).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow); draw.text(String(dados.h)).addClass('dim-text').move(25, PADDING + dados.h / 2).transform({ rotation: -90 }); draw.line(PADDING, 15, PADDING + dados.b, 15).stroke({ width: 1, color: '#333' }).marker('start', arrow).marker('end', arrow); draw.text(String(dados.b)).addClass('dim-text').move(PADDING + dados.b / 2, 25).attr('text-anchor', 'middle'); const label_y_inf = PADDING + dados.h + 30; const first_bar_inf = varoes_inf[0]; draw.path(`M ${first_bar_inf.x},${first_bar_inf.y} L ${first_bar_inf.x},${label_y_inf} L ${first_bar_inf.x + 20},${label_y_inf}`).fill('none').stroke({ width: 1.5, color: '#005a9c' }); draw.text(`${n_barras} Ø ${phi_long}`).addClass('dim-text').fill('#005a9c').move(first_bar_inf.x + 25, label_y_inf - 16); const label_y_sup = PADDING - 30; draw.path(`M ${x1_pos_sup},${y_pos_sup} L ${x1_pos_sup},${label_y_sup} L ${x1_pos_sup + 20},${label_y_sup}`).fill('none').stroke({ width: 1.5, color: '#005a9c' }); draw.text(`${n_barras_sup} Ø ${phi_sup}`).addClass('dim-text').fill('#005a9c').move(x1_pos_sup + 25, label_y_sup - 16); } catch (e) { console.error("Erro ao desenhar o SVG:", e); }
-            });
-        </script>
-    {% endif %}
     <script>
         document.getElementById('limparBtn').addEventListener('click', function() {
-            // Script do botão Limpar
             const form = this.closest('form');
             form.querySelector('input[name="b"]').value = '';
             form.querySelector('input[name="h"]').value = '';
             form.querySelector('input[name="M_Ed"]').value = '';
             form.querySelector('input[name="c_nom"]').value = '';
-            form.querySelector('select[name="f_ck"]').value = '';
-            form.querySelector('select[name="f_yk"]').value = '';
+            form.querySelector('select[name="f_ck"]').value = '25';
+            form.querySelector('select[name="f_yk"]').value = '500';
         });
     </script>
 {% endblock %}

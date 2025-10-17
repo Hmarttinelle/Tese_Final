@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Relatório de Cálculo - {{ calculo.elemento }}</title>
+    
     <style>
         @page {
             size: A4;
@@ -21,7 +22,7 @@
         }
         h1, h2, h3, h4 {
             font-family: 'Helvetica', Arial, sans-serif;
-            color: #0d6efd; /* Cor primária default */
+            color: #0d6efd; 
             margin: 20px 0 10px 0;
             page-break-after: avoid;
         }
@@ -30,53 +31,31 @@
         h3 { font-size: 16pt; }
         h4 { font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header p {
-            font-size: 11pt;
-            color: #666;
-            margin: 0;
-        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header p { font-size: 11pt; color: #666; margin: 0; }
 
-        .section {
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-        }
+        .section { margin-bottom: 25px; page-break-inside: avoid; }
         
-        .result-summary {
-            background-color: #f0f8ff;
-            border-left: 5px solid #0d6efd;
-            padding: 15px;
-            margin: 20px 0;
-        }
+        .result-summary { background-color: #f0f8ff; border-left: 5px solid #0d6efd; padding: 15px; margin: 20px 0; }
         .result-summary p { margin: 5px 0; }
 
-        .step-by-step ul {
-            list-style: none;
-            padding-left: 0;
+        .step-by-step ul { list-style: none; padding-left: 0; }
+        .step-by-step li { padding: 10px 0; border-bottom: 1px solid #eee; page-break-inside: avoid; }
+        .step-by-step li:last-child { border-bottom: none; }
+        .step-by-step strong { font-family: 'Helvetica', Arial, sans-serif; }
+        
+        .formula { 
+            color: #005a9c; 
+            margin: 8px 0; 
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
         }
-        .step-by-step li {
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-            page-break-inside: avoid;
-        }
-        .step-by-step li:last-child {
-            border-bottom: none;
-        }
-        .step-by-step strong {
-            font-family: 'Helvetica', Arial, sans-serif;
-        }
-        .formula {
-            color: #005a9c;
-            font-style: italic;
-            margin: 5px 0;
-        }
-        /* Classe para forçar a renderização correta de LaTeX no PDF */
-        .math-block {
-             font-family: 'Latin Modern Math', 'Cambria Math', serif;
-        }
+        
+        .drawing-container { text-align: center; margin-top: 20px; }
+        .drawing-container svg { max-width: 80%; height: auto; }
+        
     </style>
 </head>
 <body>
@@ -100,9 +79,6 @@
         <div class="result-summary">
             {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
                 <p><strong>Armadura a adotar:</strong> {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</p>
-                {% if calculo.resultado_final.combinacao_unica and calculo.resultado_final.combinacao_mista and calculo.resultado_final.combinacao_unica.combinacao_str != calculo.resultado_final.combinacao_mista.combinacao_str %}
-                    <p style="font-size: smaller; color: #555;">(Opção alternativa de diâmetro único: {{ calculo.resultado_final.combinacao_unica.combinacao_str }})</p>
-                {% endif %}
             {% elif calculo.elemento == 'Sapata' %}
                 <p><strong>Dimensões (A x B x H):</strong> {{ calculo.resultado_final.dimensoes }}</p>
                 <p><strong>Armadura Inferior (Dir. X):</strong> {{ calculo.resultado_final.armadura_x }}</p>
@@ -111,15 +87,29 @@
         </div>
     </div>
 
+    {% if calculo.desenho_svg or calculo.desenho_planta_svg %}
+    <div class="section drawing-container" style="page-break-before: auto;">
+        <h2>Representação Gráfica</h2>
+        {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
+             {{ calculo.desenho_svg|safe }}
+        {% elif calculo.elemento == 'Sapata' %}
+            <h4>Planta</h4>
+            {{ calculo.desenho_planta_svg|safe }}
+            <h4 style="margin-top: 20px;">Corte A-A</h4>
+            {{ calculo.desenho_corte_svg|safe }}
+        {% endif %}
+    </div>
+    {% endif %}
+
     {% if calculo.resultado_final.passos %}
-    <div class="section step-by-step">
+    <div class="section step-by-step" style="page-break-before: auto;">
         <h2>Memória de Cálculo Detalhada</h2>
         <ul>
             {% for passo in calculo.resultado_final.passos %}
                 <li>
                     <h4>{{ passo.titulo }}</h4>
-                    {% if passo.formula %}
-                        <div class="formula">Fórmula: <span class="math-block">`\( {{ passo.formula }} \)`</span></div>
+                    {% if passo.formula_formatada %}
+                        <div class="formula">{{ passo.formula_formatada|safe }}</div>
                     {% endif %}
                     <div>{{ passo.calculo|safe }}</div>
                 </li>
