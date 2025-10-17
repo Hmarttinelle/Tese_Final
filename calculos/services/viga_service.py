@@ -1,59 +1,11 @@
 # calculos/services/viga_service.py
 import math
+from . import armadura_service
 
-# ==============================================================================
-# FUNÇÕES AUXILIARES PARA ENCONTRAR COMBINAÇÃO DE BARRAS OTIMIZADAS
-# ==============================================================================
-def encontrar_combinacao_barras_otima(As_req_cm2, b_mm, c_nom_mm, phi_estribo_mm):
-    """
-    Encontra a combinação ótima de varões (diâmetro e quantidade) que satisfaz
-    a área de aço necessária e respeita os espaçamentos mínimos.
-    Retorna a solução com a menor área de aço que cumpre os requisitos.
-    """
-    vergalhoes_padrao = {25: 4.909, 20: 3.142, 16: 2.011, 12: 1.131}
-    largura_disponivel = b_mm - 2 * c_nom_mm - 2 * phi_estribo_mm
-    solucoes_validas = []
-    
-    for diametro, area_varao in vergalhoes_padrao.items():
-        if area_varao <= 0: continue
-        
-        n_barras = math.ceil(As_req_cm2 / area_varao)
-        if n_barras < 2: n_barras = 2 # Mínimo de 2 varões para uma viga
-
-        # Verificação do espaçamento mínimo (EC2, 8.2)
-        espacamento_min = max(diametro, 20) # 20mm ou o diâmetro do varão
-        largura_necessaria = n_barras * diametro + (n_barras - 1) * espacamento_min
-        
-        if largura_necessaria <= largura_disponivel:
-            area_total = n_barras * area_varao
-            texto_verificacao = f"Para {n_barras}Ø{diametro}: Largura necessária ≈ {largura_necessaria:.0f} mm. Largura disponível = {largura_disponivel:.0f} mm. -> OK"
-            solucoes_validas.append({
-                "n_barras": n_barras,
-                "diametro": diametro,
-                "area_total": area_total,
-                "verificacao": texto_verificacao
-            })
-            
-    if not solucoes_validas:
-        return (0, 0, 0, "Nenhuma combinação de armadura coube numa única camada.")
-        
-    # Encontra a solução que tem a menor área de aço (mais económica)
-    solucao_otima = min(solucoes_validas, key=lambda x: x['area_total'])
-    
-    return (
-        solucao_otima['n_barras'],
-        solucao_otima['diametro'],
-        solucao_otima['area_total'],
-        solucao_otima['verificacao']
-    )
-
-# ==============================================================================
-# FUNÇÃO PRINCIPAL DE DIMENSIONAMENTO
-# ==============================================================================
 def dimensionar_viga(b, h, f_ck, f_yk, M_Ed_kNm, c_nom):
     """
-    Função principal que realiza o dimensionamento de uma viga à flexão simples.
-    Recebe os dados de entrada e retorna um dicionário com o resultado e o passo a passo.
+    Função principal que realiza o dimensionamento de uma viga à flexão simples,
+    agora utilizando o novo serviço de otimização de armaduras.
     """
     passos = []
     
@@ -63,7 +15,7 @@ def dimensionar_viga(b, h, f_ck, f_yk, M_Ed_kNm, c_nom):
     f_yd_mpa = f_yk / gamma_s
     M_Ed_Nm = M_Ed_kNm * 1000
     b_m = b / 1000
-    phi_estribo = 8.0 # Diâmetro do estribo assumido para o cálculo
+    phi_estribo = 8.0
 
     passos.append({"titulo": "1. Parâmetros de Cálculo", "calculo": f"f_cd = {f_ck:.0f} / {gamma_c} = {f_cd_mpa:.2f} MPa; f_yd = {f_yk:.0f} / {gamma_s} = {f_yd_mpa:.2f} MPa"})
 
@@ -87,19 +39,24 @@ def dimensionar_viga(b, h, f_ck, f_yk, M_Ed_kNm, c_nom):
     xi_temp = (1 - math.sqrt(1 - 2 * mu)) / lambda_val if mu < 0.5 else 1.25
     z_temp = d_m * (1 - 0.5 * lambda_val * xi_temp)
     As_req_cm2_temp = (M_Ed_Nm / (z_temp * (f_yd_mpa * 10**6))) * 10000 if z_temp > 0 else 0
-    _, phi_long_final, _, _ = encontrar_combinacao_barras_otima(As_req_cm2_temp, b, c_nom, phi_estribo)
+    
+    largura_disponivel = b - 2 * c_nom - 2 * phi_estribo
+    solucoes_temp = armadura_service.encontrar_combinacoes_otimas(As_req_cm2_temp, largura_disponivel)
+    
+    solucao_unica_temp = solucoes_temp.get('unica')
+    
+    phi_long_final = 0
+    if solucao_unica_temp:
+        phi_long_final = int(solucao_unica_temp['combinacao_str'].split('Ø')[1])
 
     # --- Iteração 2: Recálculo com o diâmetro final para maior precisão ---
-    if phi_long_final != phi_long_assumido and phi_long_final != 0:
-        passos.append({"titulo": "6. Recálculo (Iteração 2)", "calculo": f"O diâmetro final ótimo ({phi_long_final}mm) é diferente do assumido ({phi_long_assumido}mm). Procede-se a um recálculo para garantir a precisão."})
-        
+    if phi_long_final and phi_long_final != phi_long_assumido:
+        passos.append({"titulo": "6. Recálculo (Iteração 2)", "calculo": f"O diâmetro da solução de varão único ({phi_long_final}mm) é diferente do assumido ({phi_long_assumido}mm). Procede-se a um recálculo para garantir a precisão."})
         d = h - c_nom - phi_estribo - (phi_long_final / 2)
         d_m = d / 1000
         passos.append({"titulo": "6.1. Nova Altura útil (d₂)", "calculo": f"d₂ = {h:.1f} - {c_nom:.1f} - {phi_estribo:.1f} - {phi_long_final:.1f} / 2 = {d:.1f} mm"})
-
         mu = M_Ed_Nm / (b_m * d_m**2 * (f_cd_mpa * 10**6)) if (b_m * d_m**2 * f_cd_mpa) > 0 else 0
         passos.append({"titulo": "6.2. Novo Momento reduzido (μ₂)", "formula": r"\mu = \frac{M_{Ed}}{b \cdot d^2 \cdot f_{cd}}", "calculo": f"μ₂ = {M_Ed_Nm:.0f} / ({b_m} x {d_m:.3f}² x ({f_cd_mpa:.2f} x 10^6)) = {mu:.3f}"})
-        
         if mu > mu_lim:
             raise ValueError("Momento reduzido excede o limite após recálculo.")
     
@@ -113,24 +70,39 @@ def dimensionar_viga(b, h, f_ck, f_yk, M_Ed_kNm, c_nom):
                       f"As,req = {M_Ed_Nm:.0f} / ({z:.3f} x ({f_yd_mpa:.2f} x 10^6)) = <b>{As_req_cm2:.2f} cm²</b>")
     passos.append({"titulo": "7. Área de Aço Necessária", "formula": r"\xi = \frac{1 - \sqrt{1 - 2\mu}}{\lambda} \ ; \ z = d(1 - 0.5\lambda\xi) \ ; \ A_s = \frac{M_{Ed}}{z \cdot f_{yd}}", "calculo": calculo_as_req})
 
-    n_barras, phi_long_final, As_prov_cm2, verif_esp = encontrar_combinacao_barras_otima(As_req_cm2, b, c_nom, phi_estribo)
-    if n_barras == 0:
-        raise ValueError(verif_esp)
-    passos.append({"titulo": "8. Proposta de Armadura (Solução Ótima)", "calculo": f"A melhor solução para {As_req_cm2:.2f} cm² é {n_barras}Ø{phi_long_final} ({As_prov_cm2:.2f} cm²).<br>{verif_esp}"})
+    solucoes = armadura_service.encontrar_combinacoes_otimas(As_req_cm2, largura_disponivel)
+    solucao_unica = solucoes.get('unica')
+    solucao_mista = solucoes.get('mista')
+
+    if not solucao_unica and not solucao_mista:
+        raise ValueError("Não foi possível encontrar uma combinação de armadura válida que coubesse na secção.")
+
+    # Determinar a solução principal (a mais económica de todas)
+    if solucao_unica and solucao_mista:
+        solucao_principal = min([solucao_unica, solucao_mista], key=lambda x: x['area_total_cm2'])
+    else:
+        solucao_principal = solucao_unica or solucao_mista
+    
+    combinacao_final_str = solucao_principal['combinacao_str']
+    As_prov_cm2 = solucao_principal['As_final_cm2']
+    
+    # Adicionar passo com as duas opções
+    texto_proposta = f"Para {As_req_cm2:.2f} cm², foram encontradas as seguintes soluções:<br>"
+    if solucao_mista:
+        texto_proposta += f" • <b>Opção Mista (mais económica): {solucao_mista['combinacao_str']}</b> ({solucao_mista['As_final_cm2']:.2f} cm²)<br>"
+    if solucao_unica:
+        texto_proposta += f" • <b>Opção Diâmetro Único: {solucao_unica['combinacao_str']}</b> ({solucao_unica['As_final_cm2']:.2f} cm²)<br>"
+    texto_proposta += f"<br>A solução ótima adotada é a de menor área total: <b>{combinacao_final_str}</b>."
+    passos.append({"titulo": "8. Proposta de Armadura (Soluções Ótimas)", "calculo": texto_proposta})
 
     # --- Verificações Finais de Armadura Mínima ---
-    if f_ck <= 50:
-        f_ctm = 0.30 * f_ck**(2/3)
-    else:
-        f_ctm = 2.12 * math.log(1 + (f_ck + 8) / 10)
-    
+    if f_ck <= 50: f_ctm = 0.30 * f_ck**(2/3)
+    else: f_ctm = 2.12 * math.log(1 + (f_ck + 8) / 10)
     as_min_termo1 = 0.26 * (f_ctm / f_yk) * b_m * d_m * 10000
     as_min_termo2 = 0.0013 * b_m * d_m * 10000
     As_min_cm2 = max(as_min_termo1, as_min_termo2)
-    
     As_final_cm2 = max(As_prov_cm2, As_min_cm2)
-    combinacao_final_str = f"{n_barras} Ø {phi_long_final}"
-
+    
     calculo_as_min = (f"f_ctm = 0.30 x {f_ck:.0f}^(2/3) = {f_ctm:.2f} MPa<br>"
                       f"As,min₁ = 0.26 x ({f_ctm:.2f} / {f_yk:.0f}) x {b:.0f} x {d:.1f} = {as_min_termo1:.2f} cm²<br>"
                       f"As,min₂ = 0.0013 x {b:.0f} x {d:.1f} = {as_min_termo2:.2f} cm²<br>"
@@ -138,19 +110,24 @@ def dimensionar_viga(b, h, f_ck, f_yk, M_Ed_kNm, c_nom):
                       f"Área de armadura a adotar: max(As,prov, As,min) = max({As_prov_cm2:.2f}, {As_min_cm2:.2f}) = <b>{As_final_cm2:.2f} cm²</b>")
     passos.append({"titulo": "9. Verificação da Armadura Mínima", "formula": r"A_{s,min} = max(0.26\frac{f_{ctm}}{f_{yk}} \cdot b_t \cdot d; 0.0013 \cdot b_t \cdot d)", "calculo": calculo_as_min})
 
-    passos.append({"titulo": "10. Armadura Superior Construtiva (Porta-Estribos)",                 
-                   "calculo": "Para garantir a correta montagem da armadura e o posicionamento dos estribos, adota-se uma armadura superior construtiva. "
-                                "Adicionalmente, a Sec. 9.2.1.2 da norma exige uma armadura superior nos apoios para resistir a eventuais momentos negativos. "
-                                "A prática comum para vigas de edifícios correntes consiste em utilizar uma armadura mínima de <b>2 Ø 10</b>."
-    })
+    passos.append({"titulo": "10. Armadura Superior Construtiva (Porta-Estribos)", "calculo": "Para garantir a correta montagem da armadura e o posicionamento dos estribos, adota-se uma armadura superior construtiva. A prática comum consiste em utilizar uma armadura mínima de <b>2 Ø 10</b>."})
 
     # --- Montagem do resultado final ---
-    dados_desenho = {"b": b, "h": h, "c_nom": c_nom, "phi_estribo": phi_estribo, "n_barras": n_barras, "phi_long": phi_long_final}
+    try:
+        n_barras = sum([int(s.split('Ø')[0].strip()) for s in combinacao_final_str.split(' + ')])
+        phi_long_desenho = max([int(s.split('Ø')[1].strip()) for s in combinacao_final_str.split(' + ')])
+    except:
+        n_barras, phi_long_desenho = 0, 0
+
+    dados_desenho = {"b": b, "h": h, "c_nom": c_nom, "phi_estribo": phi_estribo, "n_barras": n_barras, "phi_long": phi_long_desenho}
+    
     resultado = {
         'status': 'Sucesso',
         'mensagem': 'Cálculo iterativo efetuado com sucesso.',
         'combinacao_final': combinacao_final_str,
         'As_final_cm2': f"{As_final_cm2:.2f}",
+        'combinacao_unica': solucao_unica,
+        'combinacao_mista': solucao_mista,
         'passos': passos,
         'dados_desenho': dados_desenho
     }

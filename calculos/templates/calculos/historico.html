@@ -26,12 +26,12 @@
                         <td>{{ calculo.timestamp|date:"d/m/Y H:i" }}</td>
                         <td class="input-details">
                             {% if calculo.elemento == 'Viga' %}
-                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed }} kNm
+                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed.0 }} kNm
                             {% elif calculo.elemento == 'Pilar' %}
-                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed }} kN<br>
-                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed }} kNm
+                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed.0 }} kN<br>
+                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed.0 }} kNm
                             {% elif calculo.elemento == 'Sapata' %}
-                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed }} kN
+                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed.0 }} kN
                             {% endif %}
                         </td>
                         <td class="result-details">

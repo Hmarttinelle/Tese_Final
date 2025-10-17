@@ -10,8 +10,8 @@
 
     <form method="post">
         {% csrf_token %}
-        <div class="form-group"><label>Largura (b) [mm]:</label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required></div>
-        <div class="form-group"><label>Altura (h) [mm]:</label><input type="number" name="h" value="{{ input_data.h|default:'500' }}" required></div>
+        <div class="form-group"><label>Largura (b) [mm]:</label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required min="1"></div>
+        <div class="form-group"><label>Altura (h) [mm]:</label><input type="number" name="h" value="{{ input_data.h|default:'500' }}" required min="1"></div>
         <div class="form-group">
             <label>Classe do Betão:</label>
             <select name="f_ck">
@@ -24,13 +24,12 @@
                 <option value="500" {% if input_data.f_yk == '500' or not input_data.f_yk %}selected{% endif %}>A500</option>
                 </select>
         </div>
-        <div class="form-group"><label>Momento (M_Ed) [kNm]:</label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'120' }}" required></div>
-        <div class="form-group"><label>Recobrimento (c_nom) [mm]:</label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'30' }}" required></div>
+        <div class="form-group"><label>Momento (M_Ed) [kNm]:</label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'120' }}" required min="0.1"></div>
+        <div class="form-group"><label>Recobrimento (c_nom) [mm]:</label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'30' }}" required min="1"></div>
 
         <div class="form-actions">
             <button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Calcular</button>
             <button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button>
-            <button type="button" onclick="window.print()" class="btn-secundario"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
         </div>
     </form>
 
@@ -39,12 +38,27 @@
             <h3>Resultado Final:</h3>
             <p><strong>{{ resultado.mensagem }}</strong></p>
             {% if resultado.status == 'Sucesso' %}
-                <p style="font-size: 1.2rem;">
-                    <strong>Armadura a adotar: {{ resultado.combinacao_final }} ({{ resultado.As_final_cm2 }} cm²)</strong>
+                <p style="font-size: 1.1rem; margin-bottom: 15px;">
+                    <strong>Armadura Ótima a Adotar: {{ resultado.combinacao_final }} ({{ resultado.As_final_cm2 }} cm²)</strong>
                 </p>
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                <p style="font-size: 0.9rem; color: #555;"><strong>Opções Consideradas:</strong></p>
+                {% if resultado.combinacao_mista %}
+                    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Mista:</strong> {{ resultado.combinacao_mista.combinacao_str }} ({{ resultado.combinacao_mista.As_final_cm2 }} cm²)</p>
+                {% endif %}
+                {% if resultado.combinacao_unica %}
+                    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Diâmetro Único:</strong> {{ resultado.combinacao_unica.combinacao_str }} ({{ resultado.combinacao_unica.As_final_cm2 }} cm²)</p>
+                {% endif %}
             {% endif %}
         </div>
         
+        {% if resultado.status == 'Sucesso' %}
+        <div class="form-actions" style="margin-top: 20px; justify-content: center;">
+             <a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="btn-secundario">
+                <i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF
+            </a>
+        </div>
+
         <div class="resultado-detalhado">
             {% if resultado.dados_desenho %}
             <div class="desenho-wrapper">
@@ -70,10 +84,22 @@
             </div>
             {% endif %}
         </div>
+        {% endif %}
     {% endif %}
 {% endblock %}
 
 {% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const spinnerOverlay = document.getElementById('spinner-overlay');
+            if (form && spinnerOverlay) {
+                form.addEventListener('submit', function() {
+                    spinnerOverlay.style.display = 'flex';
+                });
+            }
+        });
+    </script>
     <script>
         function exportarSVG(containerId, filename) {
             const container = document.getElementById(containerId);

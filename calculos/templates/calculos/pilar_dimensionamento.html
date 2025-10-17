@@ -10,24 +10,51 @@
 
     <form method="post">
         {% csrf_token %}
-        <div class="form-group"><label>Largura (b) [mm]:</label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required></div>
-        <div class="form-group"><label>Altura (h) [mm]:</label><input type="number" name="h" value="{{ input_data.h|default:'400' }}" required></div>
-        <div class="form-group"><label>Comprimento Real (l) [m]:</label><input type="number" step="0.1" name="l" value="{{ input_data.l|default:'3.5' }}" required></div>
-        <div class="form-group">
-            <label>Ligação no Topo:</label>
-            <select name="lig_topo" class="form-control">
-                <option value="artic" {% if input_data.lig_topo == 'artic' %}selected{% endif %}>Articulado</option>
-                <option value="encab" {% if input_data.lig_topo == 'encab' %}selected{% endif %}>Encastrado</option>
-                <option value="livre" {% if input_data.lig_topo == 'livre' %}selected{% endif %}>Livre</option>
-            </select>
+        <div class="form-group"><label>Largura (b) [mm]:</label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required min="1"></div>
+        <div class="form-group"><label>Altura (h) [mm]:</label><input type="number" name="h" value="{{ input_data.h|default:'400' }}" required min="1"></div>
+        <div class="form-group"><label>Comprimento Real (l) [m]:</label><input type="number" step="0.1" name="l" value="{{ input_data.l|default:'3.5' }}" required min="0.1"></div>
+        
+        <div class="form-group form-group-full">
+            <label>Condições de Apoio (Ligações)</label>
+            <div class="ligacao-wrapper">
+                <div class="ligacao-selector">
+                    <span>Topo:</span>
+                    <div class="ligacao-options">
+                        <label class="{% if input_data.lig_topo == 'artic' or not input_data.lig_topo %}active{% endif %}">
+                            <input type="radio" name="lig_topo" value="artic" {% if input_data.lig_topo == 'artic' or not input_data.lig_topo %}checked{% endif %}>
+                            <span class="label-text">Articulado</span>
+                            <img src="{% static 'calculos/icons/artic.svg' %}" alt="Articulado">
+                        </label>
+                        <label class="{% if input_data.lig_topo == 'encab' %}active{% endif %}">
+                            <input type="radio" name="lig_topo" value="encab" {% if input_data.lig_topo == 'encab' %}checked{% endif %}>
+                            <span class="label-text">Encastrado</span>
+                            <img src="{% static 'calculos/icons/encab.svg' %}" alt="Encastrado">
+                        </label>
+                        <label class="{% if input_data.lig_topo == 'livre' %}active{% endif %}">
+                            <input type="radio" name="lig_topo" value="livre" {% if input_data.lig_topo == 'livre' %}checked{% endif %}>
+                            <span class="label-text">Livre</span>
+                            <img src="{% static 'calculos/icons/livre.svg' %}" alt="Livre">
+                        </label>
+                    </div>
+                </div>
+                <div class="ligacao-selector">
+                    <span>Base:</span>
+                    <div class="ligacao-options">
+                        <label class="{% if input_data.lig_base == 'artic' %}active{% endif %}">
+                            <input type="radio" name="lig_base" value="artic" {% if input_data.lig_base == 'artic' %}checked{% endif %}>
+                            <span class="label-text">Articulado</span>
+                            <img src="{% static 'calculos/icons/artic.svg' %}" alt="Articulado">
+                        </label>
+                        <label class="{% if input_data.lig_base == 'encab' or not input_data.lig_base %}active{% endif %}">
+                            <input type="radio" name="lig_base" value="encab" {% if input_data.lig_base == 'encab' or not input_data.lig_base %}checked{% endif %}>
+                            <span class="label-text">Encastrado</span>
+                            <img src="{% static 'calculos/icons/encab.svg' %}" alt="Encastrado">
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Ligação na Base:</label>
-            <select name="lig_base" class="form-control">
-                <option value="encab" {% if input_data.lig_base == 'encab' %}selected{% endif %}>Encastrado</option>
-                <option value="artic" {% if input_data.lig_base == 'artic' or not input_data.lig_base %}selected{% endif %}>Articulado</option>
-            </select>
-        </div>
+
         <div class="form-group">
             <label>Classe do Betão:</label>
             <select name="f_ck" class="form-control">
@@ -45,15 +72,14 @@
                 <option value="500" {% if not input_data.f_yk or input_data.f_yk == '500' %}selected{% endif %}>A500</option>
             </select>
         </div>
-        <div class="form-group"><label>Esforço Axial (N_Ed) [kN]:</label><input type="number" step="1" name="N_Ed" value="{{ input_data.N_Ed|default:'800' }}" required></div>
-        <div class="form-group"><label>Momento 1ª Ordem (M_Ed) [kNm]:</label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'60' }}" required></div>
-        <div class="form-group"><label>Recobrimento (c_nom) [mm]:</label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'35' }}" required></div>
-        <div class="form-group"><label>Coef. Fluência (φ_ef):</label><input type="number" step="0.1" name="phi_ef" value="{{ input_data.phi_ef|default:'2.0' }}" required></div>
+        <div class="form-group"><label>Esforço Axial (N_Ed) [kN]:</label><input type="number" step="any" name="N_Ed" value="{{ input_data.N_Ed|default:'800' }}" required min="0.1"></div>
+        <div class="form-group"><label>Momento 1ª Ordem (M_Ed) [kNm]:</label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'60' }}" required min="0"></div>
+        <div class="form-group"><label>Recobrimento (c_nom) [mm]:</label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'35' }}" required min="1"></div>
+        <div class="form-group"><label>Coef. Fluência (φ_ef):</label><input type="number" step="0.1" name="phi_ef" value="{{ input_data.phi_ef|default:'2.0' }}" required min="0"></div>
         
         <div class="form-actions">
             <button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Calcular</button>
             <button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button>
-            <button type="button" onclick="window.print()" class="btn-secundario"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
         </div>
     </form>
 
@@ -62,11 +88,27 @@
             <h3>Resultado Final:</h3>
             <p><strong>{{ resultado.mensagem }}</strong></p>
             {% if resultado.status == 'Sucesso' %}
-                <p style="font-size: 1.2rem;">
-                    <strong>Armadura a adotar: {{ resultado.combinacao_final }} ({{ resultado.As_final_cm2 }} cm²)</strong>
+                <p style="font-size: 1.1rem; margin-bottom: 15px;">
+                    <strong>Armadura Ótima a Adotar: {{ resultado.combinacao_final }} ({{ resultado.As_final_cm2 }} cm²)</strong>
                 </p>
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                <p style="font-size: 0.9rem; color: #555;"><strong>Opções Consideradas:</strong></p>
+                {% if resultado.combinacao_mista %}
+                    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Mista:</strong> {{ resultado.combinacao_mista.combinacao_str }} ({{ resultado.combinacao_mista.As_final_cm2 }} cm²)</p>
+                {% endif %}
+                {% if resultado.combinacao_unica %}
+                    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Diâmetro Único:</strong> {{ resultado.combinacao_unica.combinacao_str }} ({{ resultado.combinacao_unica.As_final_cm2 }} cm²)</p>
+                {% endif %}
             {% endif %}
         </div>
+
+        {% if resultado.status == 'Sucesso' %}
+        <div class="form-actions" style="margin-top: 20px; justify-content: center;">
+             <a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="btn-secundario">
+                <i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF
+            </a>
+        </div>
+
         <div class="resultado-detalhado">
             {% if resultado.dados_desenho %}
             <div class="desenho-wrapper">
@@ -91,10 +133,34 @@
             </div>
             {% endif %}
         </div>
+        {% endif %}
     {% endif %}
 {% endblock %}
 
 {% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const spinnerOverlay = document.getElementById('spinner-overlay');
+            if (form && spinnerOverlay) {
+                form.addEventListener('submit', function() {
+                    spinnerOverlay.style.display = 'flex';
+                });
+            }
+
+            // Script para os seletores visuais de ligação
+            const radioGroups = document.querySelectorAll('.ligacao-options');
+            radioGroups.forEach(group => {
+                group.addEventListener('change', function(event) {
+                    const labels = group.querySelectorAll('label');
+                    labels.forEach(label => label.classList.remove('active'));
+                    if (event.target.type === 'radio' && event.target.checked) {
+                        event.target.parentElement.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
     <script>
         function exportarSVG(containerId, filename) {
             const container = document.getElementById(containerId);
@@ -171,10 +237,20 @@
             form.querySelector('input[name="M_Ed"]').value = '';
             form.querySelector('input[name="c_nom"]').value = '';
             form.querySelector('input[name="phi_ef"]').value = '';
-            form.querySelector('select[name="lig_topo"]').value = '';
-            form.querySelector('select[name="lig_base"]').value = '';
-            form.querySelector('select[name="f_ck"]').value = '';
-            form.querySelector('select[name="f_yk"]').value = '';
+            // Resetar seletores visuais
+            const radios = form.querySelectorAll('.ligacao-options input[type="radio"]');
+            radios.forEach(radio => {
+                radio.checked = false;
+                radio.parentElement.classList.remove('active');
+            });
+            // Opcional: Re-selecionar os defaults
+            form.querySelector('input[name="lig_topo"][value="artic"]').checked = true;
+            form.querySelector('input[name="lig_topo"][value="artic"]').parentElement.classList.add('active');
+            form.querySelector('input[name="lig_base"][value="encab"]').checked = true;
+            form.querySelector('input[name="lig_base"][value="encab"]').parentElement.classList.add('active');
+
+            form.querySelector('select[name="f_ck"]').value = '25';
+            form.querySelector('select[name="f_yk"]').value = '500';
         });
     </script>
 {% endblock %}
