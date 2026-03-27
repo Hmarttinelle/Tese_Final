@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Cálculo - {{ calculo.elemento }}</title>
+    
+    <style>
+        @page {
+            size: A4;
+            margin: 2.5cm 2cm;
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10pt;
+                color: #888;
+            }
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #333;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Helvetica', Arial, sans-serif;
+            color: #0d6efd; 
+            margin: 20px 0 10px 0;
+            page-break-after: avoid;
+        }
+        h1 { font-size: 24pt; text-align: center; border-bottom: 2px solid #0d6efd; padding-bottom: 10px; }
+        h2 { font-size: 18pt; }
+        h3 { font-size: 16pt; }
+        h4 { font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header p { font-size: 11pt; color: #666; margin: 0; }
+
+        .section { margin-bottom: 25px; page-break-inside: avoid; }
+        
+        .result-summary { background-color: #f0f8ff; border-left: 5px solid #0d6efd; padding: 15px; margin: 20px 0; }
+        .result-summary p { margin: 5px 0; }
+
+        .step-by-step ul { list-style: none; padding-left: 0; }
+        .step-by-step li { padding: 10px 0; border-bottom: 1px solid #eee; page-break-inside: avoid; }
+        .step-by-step li:last-child { border-bottom: none; }
+        .step-by-step strong { font-family: 'Helvetica', Arial, sans-serif; }
+        
+        .formula { 
+            color: #005a9c; 
+            margin: 8px 0; 
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .drawing-container { text-align: center; margin-top: 20px; }
+        .drawing-container svg { max-width: 80%; height: auto; }
+        
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório de Cálculo Estrutural</h1>
+        <p>Elemento: <strong>{{ calculo.elemento }}</strong></p>
+        <p>Data do Cálculo: {{ calculo.timestamp|date:"d/m/Y H:i:s" }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Dados de Entrada</h2>
+        <ul>
+            {% for item in calculo.input_data_formatado %}
+                <li><strong>{{ item.label }}:</strong> {{ item.value }} {{ item.unit }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Resultado Final</h2>
+        <div class="result-summary">
+            {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
+                <p><strong>Armadura a adotar:</strong> {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</p>
+            {% elif calculo.elemento == 'Sapata' %}
+                {% if calculo.resultado_final.tipo_sapata %}
+                <p><strong>Tipo de sapata:</strong> {{ calculo.resultado_final.tipo_sapata }}</p>
+                {% endif %}
+                <p><strong>Dimensões (A x B x H):</strong> {{ calculo.resultado_final.dimensoes }}</p>
+                <p><strong>Armadura Inferior (Dir. X):</strong> {{ calculo.resultado_final.armadura_x }}</p>
+                <p><strong>Armadura Inferior (Dir. Y):</strong> {{ calculo.resultado_final.armadura_y }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if calculo.desenho_svg or calculo.desenho_planta_svg %}
+    <div class="section drawing-container" style="page-break-before: auto;">
+        <h2>Representação Gráfica</h2>
+        {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
+             {{ calculo.desenho_svg|safe }}
+        {% elif calculo.elemento == 'Sapata' %}
+            <h4>Planta</h4>
+            {{ calculo.desenho_planta_svg|safe }}
+            <h4 style="margin-top: 20px;">Corte A-A</h4>
+            {{ calculo.desenho_corte_svg|safe }}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if calculo.resultado_final.passos %}
+    <div class="section step-by-step" style="page-break-before: auto;">
+        <h2>Memória de Cálculo Detalhada</h2>
+        <ul>
+            {% for passo in calculo.resultado_final.passos %}
+                <li>
+                    <h4>{{ passo.titulo }}</h4>
+                    {% if passo.formula_formatada %}
+                        <div class="formula">{{ passo.formula_formatada|safe }}</div>
+                    {% endif %}
+                    <div>{{ passo.calculo|safe }}</div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>

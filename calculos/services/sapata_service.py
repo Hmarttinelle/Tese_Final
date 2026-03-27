@@ -5,23 +5,83 @@ import math
 # FUNÇÕES AUXILIARES PARA ENCONTRAR COMBINAÇÃO DE BARRAS OTIMIZADAS
 # ==============================================================================
 
-def encontrar_combinacao_barras_otima(As_req_cm2, b_mm, c_nom_mm, phi_estribo_mm):
-    vergalhoes_padrao = {25: 4.909, 20: 3.142, 16: 2.011, 12: 1.131} 
-    largura_disponivel = b_mm - 2 * c_nom_mm - 2 * phi_estribo_mm
-    solucoes_validas = []
-    for diametro, area_varao in vergalhoes_padrao.items():
-        n_barras = math.ceil(As_req_cm2 / area_varao) if area_varao > 0 else 0
-        if n_barras == 0: continue
-        if n_barras < 2: n_barras = 2
+def escolher_armadura_sapata_total(As_req_cm2_m, L_distrib_m, c_nom_mm):
+    """
+    Escolhe a combinação de barras considerando a largura total da sapata disponível
+    para a distribuição. Calcula a área total necessária e o espaçamento real.
+    """
+    As_req_total_cm2 = As_req_cm2_m * L_distrib_m
+    largura_disp_mm = L_distrib_m * 1000.0 - 2.0 * c_nom_mm
+    
+    vergalhoes_padrao = {
+        8:  0.503,
+        10: 0.785,
+        12: 1.131,
+        16: 2.011,
+        20: 3.142,
+        25: 4.909,
+    }
+
+    S_MAX_ABS = 300.0
+    S_ALVO    = 200.0
+
+    solucoes = []
+
+    for diametro, area_varao_cm2 in vergalhoes_padrao.items():
         espacamento_min = max(diametro, 20, 27)
-        largura_necessaria = n_barras * diametro + (n_barras - 1) * espacamento_min
-        if largura_necessaria <= largura_disponivel:
-            area_total = n_barras * area_varao
-            texto_verificacao = f"Para {n_barras}Ø{diametro}: Largura necessária ≈ {largura_necessaria:.0f} mm. Largura disponível = {largura_disponivel:.0f} mm. -> OK"
-            solucoes_validas.append({"n_barras": n_barras, "diametro": diametro, "area_total": area_total, "verificacao": texto_verificacao})
-    if not solucoes_validas: return (0, 0, 0, "Nenhuma combinação de armadura coube numa única camada.")
-    solucao_otima = min(solucoes_validas, key=lambda x: x['area_total'])
-    return (solucao_otima['n_barras'], solucao_otima['diametro'], solucao_otima['area_total'], solucao_otima['verificacao'])
+
+        # n_min para assegurar pelo menos a área requerida
+        n_min = math.ceil(As_req_total_cm2 / area_varao_cm2) if area_varao_cm2 > 0 else 2
+        n_min = max(int(n_min), 2)
+        
+        largura_centros = largura_disp_mm - diametro
+        if largura_centros <= 0:
+            continue
+
+        for n_barras in range(n_min, 100):
+            as_prov_total_cm2 = n_barras * area_varao_cm2
+            as_prov_cm2_m = as_prov_total_cm2 / L_distrib_m
+
+            espacamento_mm = largura_centros / (n_barras - 1) if n_barras > 1 else largura_centros
+            
+            if espacamento_mm < espacamento_min:
+                break
+            if espacamento_mm > S_MAX_ABS:
+                continue
+
+            # Priorizamos a área necessária + proximidade ao espaçamento alvo
+            excesso = as_prov_total_cm2 - As_req_total_cm2
+            score = excesso + abs(espacamento_mm - S_ALVO) * 0.01
+
+            texto_verificacao = (
+                f"Para {n_barras}Ø{diametro}: As,prov,total ≈ {as_prov_total_cm2:.2f} cm² (Req: {As_req_total_cm2:.2f} cm²); "
+                f"s ≈ {espacamento_mm:.0f} mm (mín={espacamento_min} mm, máx={S_MAX_ABS} mm); "
+                f"As,prov ≈ {as_prov_cm2_m:.2f} cm²/m. -> OK"
+            )
+
+            solucoes.append({
+                "n_barras": n_barras,
+                "diametro": diametro,
+                "area_total_prov": as_prov_total_cm2,
+                "area_prov_m": as_prov_cm2_m,
+                "espacamento": espacamento_mm,
+                "score": score,
+                "verificacao": texto_verificacao
+            })
+
+    if not solucoes:
+        return (0, 0, 0, 0, 0, "Nenhuma combinação de armadura válida.")
+
+    sol_otima = min(solucoes, key=lambda x: x['score'])
+
+    return (
+        sol_otima['n_barras'],
+        sol_otima['diametro'],
+        sol_otima['area_total_prov'],
+        sol_otima['area_prov_m'],
+        sol_otima['espacamento'],
+        sol_otima['verificacao'],
+    )
 
 # ==============================================================================
 # FUNÇÕES AUXILIARES PARA DESENHOS
@@ -46,18 +106,28 @@ def desenhar_sapata_planta_svg(dados_desenho):
     svg += f'<rect x="{padding}" y="{padding}" width="{A*escala}" height="{B*escala}" fill="#ececec" stroke="#333" stroke-width="2"/>'
     x_pilar, y_pilar = padding + (A - bp) / 2 * escala, padding + (B - hp) / 2 * escala
     svg += f'<rect x="{x_pilar}" y="{y_pilar}" width="{bp*escala}" height="{hp*escala}" fill="#c0c0c0" stroke="#333" stroke-width="1"/>'
-    if phi_x > 0 and esp_x_mm > 0:
-        num_barras_x = int(B / (esp_x_mm / 1000))
-        for i in range(1, num_barras_x):
-            y_i = padding + i * (esp_x_mm / 1000) * escala
+    n_barras_x = dados_desenho.get('n_barras_x', 0)
+    n_barras_y = dados_desenho.get('n_barras_y', 0)
+
+    if phi_x > 0 and n_barras_x > 0:
+        dist_x_m = esp_x_mm / 1000
+        comeco_y = padding + c_nom * escala + (phi_x / 2000) * escala
+        for i in range(n_barras_x):
+            y_i = comeco_y + i * dist_x_m * escala
             if y_i > padding + B*escala - c_nom*escala: break
             svg += f'<line x1="{padding + c_nom*escala}" y1="{y_i}" x2="{padding + A*escala - c_nom*escala}" y2="{y_i}" stroke="#005a9e" stroke-width="{max(1, phi_x/4)}"/>'
-    if phi_y > 0 and esp_y_mm > 0:
-        num_barras_y = int(A / (esp_y_mm / 1000))
-        for i in range(1, num_barras_y):
-            x_i = padding + i * (esp_y_mm / 1000) * escala
+        y_text_x = padding + B*escala - c_nom*escala - 10
+        svg += f'<text x="{padding + A*escala/2}" y="{y_text_x}" class="dim-text" fill="#005a9e" font-weight="bold">Dir X: {n_barras_x}Ø{phi_x}</text>'
+
+    if phi_y > 0 and n_barras_y > 0:
+        dist_y_m = esp_y_mm / 1000
+        comeco_x = padding + c_nom * escala + (phi_y / 2000) * escala
+        for i in range(n_barras_y):
+            x_i = comeco_x + i * dist_y_m * escala
             if x_i > padding + A*escala - c_nom*escala: break
             svg += f'<line x1="{x_i}" y1="{padding + c_nom*escala}" x2="{x_i}" y2="{padding + B*escala - c_nom*escala}" stroke="#cc0000" stroke-width="{max(1, phi_y/4)}"/>'
+        x_text_y = padding + c_nom*escala + 15
+        svg += f'<text x="{x_text_y}" y="{padding + B*escala/2}" class="dim-text" fill="#cc0000" font-weight="bold" transform="rotate(-90, {x_text_y}, {padding + B*escala/2})">Dir Y: {n_barras_y}Ø{phi_y}</text>'
     y_cota_a = padding + B * escala + padding/2
     svg += f'<path d="M {padding} {y_cota_a - 10} L {padding} {y_cota_a + 10} M {padding} {y_cota_a} L {padding + A*escala} {y_cota_a} M {padding + A*escala} {y_cota_a - 10} L {padding + A*escala} {y_cota_a + 10}" stroke="#333" stroke-width="1" fill="none"/>'
     svg += f'<text x="{padding + A*escala/2}" y="{y_cota_a - 5}" class="dim-text">{B:.2f} m</text>'
@@ -78,8 +148,10 @@ def desenhar_sapata_corte_svg(dados_desenho):
     svg += f'<rect x="{padding}" y="{y_base}" width="{A*escala}" height="{H*escala}" fill="#ececec" stroke="#333" stroke-width="2"/>'
     x_pilar = padding + (A - bp) / 2 * escala
     svg += f'<rect x="{x_pilar}" y="{y_base - 30}" width="{bp*escala}" height="30" fill="#c0c0c0" stroke="#333" stroke-width="1"/>'
-    if phi_x > 0:
-        num_barras = min(int(A / 0.15), 10); esp_barras = (A * escala - 2 * c_nom * escala) / (num_barras -1) if num_barras > 1 else 0
+    n_barras_x = dados_desenho.get('n_barras_x', 0)
+    if phi_x > 0 and n_barras_x > 0:
+        num_barras = n_barras_x
+        esp_barras = (A * escala - 2 * c_nom * escala) / (num_barras - 1) if num_barras > 1 else 0
         cy = y_base + H * escala - c_nom * escala - (phi_x/2000*escala)
         for i in range(num_barras):
             cx = padding + c_nom*escala + i * esp_barras
@@ -205,8 +277,8 @@ def dimensionar_sapata(sigma_adm_kpa, f_ck, f_yk, c_nom_mm, bp_mm, hp_mm, N_Ed_k
     
     passos.append({"titulo": "FASE 3: DIMENSIONAMENTO À FLEXÃO (ELU)", "calculo": "Objetivo: calcular a armadura necessária em cada direção."})
     
-    n_barras_y_m_temp, phi_y_temp, _, _ = encontrar_combinacao_barras_otima(1, 1000, c_nom_mm, 0)
-    n_barras_x_m_temp, phi_x_temp, _, _ = encontrar_combinacao_barras_otima(1, 1000, c_nom_mm, 0)
+    _, phi_y_temp, _, _, _, _ = escolher_armadura_sapata_total(1, A_final_m, c_nom_mm)
+    _, phi_x_temp, _, _, _, _ = escolher_armadura_sapata_total(1, B_final_m, c_nom_mm)
     phi_maior = max(phi_x_temp, phi_y_temp)
     phi_menor = min(phi_x_temp, phi_y_temp)
     d_flex_x = (H_final_mm - c_nom_mm - phi_maior/2) / 1000
@@ -241,20 +313,107 @@ def dimensionar_sapata(sigma_adm_kpa, f_ck, f_yk, c_nom_mm, bp_mm, hp_mm, N_Ed_k
                      f"<b>As,y final = max({Asy_req_cm2_m:.2f}, {As_min_cm2:.2f}) = {Asy_final_cm2_m:.2f} cm²/m</b>"
     passos.append({"titulo": "3.3 Verificação da Armadura Mínima", "formula": r"A_{s,min} = max(0.26\frac{f_{ctm}}{f_{yk}} b_t d; 0.0013 b_t d)", "calculo": calculo_as_min})
     
-    n_barras_y_m, phi_y, as_prov_y_m, _ = encontrar_combinacao_barras_otima(Asy_final_cm2_m, 1000, c_nom_mm, 0)
-    n_barras_x_m, phi_x, as_prov_x_m, _ = encontrar_combinacao_barras_otima(Asx_final_cm2_m, 1000, c_nom_mm, 0)
-    
-    if n_barras_x_m == 0 or n_barras_y_m == 0: raise ValueError("Não foi possível encontrar uma combinação de armadura válida.")
-    
-    texto_escolha_arm = f"Para a direção X (As,final={Asx_final_cm2_m:.2f} cm²/m), a melhor solução é {n_barras_x_m}Ø{phi_x}.<br>" + \
-                        f"Para a direção Y (As,final={Asy_final_cm2_m:.2f} cm²/m), a melhor solução é {n_barras_y_m}Ø{phi_y}.<br>" + \
-                        "A escolha é baseada na combinação que satisfaz a área de aço com a menor área total, garantindo espaçamentos construtivos."
-    passos.append({"titulo":"3.4. Escolha da Armadura Final", "calculo":texto_escolha_arm})
-    
-    esp_y, esp_x = 1000/n_barras_y_m if n_barras_y_m>0 else 0, 1000/n_barras_x_m if n_barras_x_m>0 else 0
+    quadrada = abs(A_final_m - B_final_m) < 0.01
+    malha_unica = False
 
-    dados_desenho = {"A_m":A_final_m, "B_m":B_final_m, "H_mm":H_final_mm, "bp_mm":bp_mm, "hp_mm":hp_mm, "c_nom_mm":c_nom_mm, "phi_x":phi_x, "esp_x_mm":esp_x, "phi_y":phi_y, "esp_y_mm":esp_y}
-    resultado = {"status":"Sucesso", "mensagem":"Cálculo efetuado com sucesso.", "passos":passos, "dimensoes":f"{A_final_m:.2f}m x {B_final_m:.2f}m x {H_final_mm/1000:.2f}m", "armadura_y":f"Ø{phi_y} c/ {esp_y:.0f} mm ({as_prov_y_m:.2f} cm²/m)", "armadura_x":f"Ø{phi_x} c/ {esp_x:.0f} mm ({as_prov_x_m:.2f} cm²/m)", "dados_desenho":dados_desenho}
+    As_req_total_x_cm2 = Asx_final_cm2_m * B_final_m
+    As_req_total_y_cm2 = Asy_final_cm2_m * A_final_m
+    
+    if quadrada:
+        vergalhoes_padrao = {
+            8:  0.503,
+            10: 0.785,
+            12: 1.131,
+            16: 2.011,
+            20: 3.142,
+            25: 4.909,
+        }
+        S_MAX_ABS = 300.0
+        S_ALVO    = 200.0
+
+        solucoes_unicas = []
+        L_distrib = A_final_m
+        largura_disp_mm = L_distrib * 1000.0 - 2.0 * c_nom_mm
+
+        for diametro, area_varao in vergalhoes_padrao.items():
+            espacamento_min = max(diametro, 20, 27)
+            largura_centros = largura_disp_mm - diametro
+            if largura_centros <= 0: continue
+
+            n_min_x = max(2, math.ceil(As_req_total_x_cm2 / area_varao))
+            for n_bx in range(n_min_x, 100):
+                area_prov_total_x = n_bx * area_varao
+                esp_x_mm = largura_centros / (n_bx - 1) if n_bx > 1 else largura_centros
+                if esp_x_mm < espacamento_min: break
+                if esp_x_mm > S_MAX_ABS: continue
+
+                n_min_y = max(2, math.ceil(As_req_total_y_cm2 / area_varao))
+                for n_by in range(n_min_y, 100):
+                    area_prov_total_y = n_by * area_varao
+                    esp_y_mm = largura_centros / (n_by - 1) if n_by > 1 else largura_centros
+                    if esp_y_mm < espacamento_min: break
+                    if esp_y_mm > S_MAX_ABS: continue
+
+                    excesso = (area_prov_total_x - As_req_total_x_cm2) + (area_prov_total_y - As_req_total_y_cm2)
+                    score = excesso + (abs(esp_x_mm - S_ALVO) + abs(esp_y_mm - S_ALVO)) * 0.01
+
+                    solucoes_unicas.append({
+                        "diametro": diametro,
+                        "n_bx": n_bx,
+                        "n_by": n_by,
+                        "area_prov_total_x": area_prov_total_x,
+                        "area_prov_total_y": area_prov_total_y,
+                        "esp_x_mm": esp_x_mm,
+                        "esp_y_mm": esp_y_mm,
+                        "score": score
+                    })
+
+        if solucoes_unicas:
+            sol_otima = min(solucoes_unicas, key=lambda x: x["score"])
+            phi_x = phi_y = sol_otima["diametro"]
+            n_barras_x = sol_otima["n_bx"]
+            n_barras_y = sol_otima["n_by"]
+            Asx_prov_total_cm2 = sol_otima["area_prov_total_x"]
+            Asy_prov_total_cm2 = sol_otima["area_prov_total_y"]
+            esp_x = sol_otima["esp_x_mm"]
+            esp_y = sol_otima["esp_y_mm"]
+            as_prov_x_m = Asx_prov_total_cm2 / B_final_m
+            as_prov_y_m = Asy_prov_total_cm2 / A_final_m
+            malha_unica = True
+
+    if not malha_unica:
+        n_barras_y, phi_y, Asy_prov_total_cm2, as_prov_y_m, esp_y, _ = escolher_armadura_sapata_total(Asy_final_cm2_m, A_final_m, c_nom_mm)
+        n_barras_x, phi_x, Asx_prov_total_cm2, as_prov_x_m, esp_x, _ = escolher_armadura_sapata_total(Asx_final_cm2_m, B_final_m, c_nom_mm)
+    
+    if n_barras_x == 0 or n_barras_y == 0: raise ValueError("Não foi possível encontrar uma combinação de armadura válida.")
+    
+    x_area_varao = Asx_prov_total_cm2 / n_barras_x if n_barras_x > 0 else 0
+    texto_x = f"<b>Direção X:</b><br>" + \
+              f"- As,req,total,x = {Asx_final_cm2_m:.2f} cm²/m × {B_final_m:.2f} m = {As_req_total_x_cm2:.2f} cm²<br>" + \
+              f"- Adota-se <b>{n_barras_x}Ø{phi_x}</b> na direção X<br>" + \
+              f"- As,prov,total,x = {n_barras_x} × {x_area_varao:.2f} = {Asx_prov_total_cm2:.2f} cm²<br>" + \
+              f"- Espaçamento real resultante: s ≈ {esp_x:.0f} mm<br>" + \
+              f"- As,prov,x = {Asx_prov_total_cm2:.2f} / {B_final_m:.2f} = {as_prov_x_m:.2f} cm²/m"
+
+    y_area_varao = Asy_prov_total_cm2 / n_barras_y if n_barras_y > 0 else 0
+    texto_y = f"<b>Direção Y:</b><br>" + \
+              f"- As,req,total,y = {Asy_final_cm2_m:.2f} cm²/m × {A_final_m:.2f} m = {As_req_total_y_cm2:.2f} cm²<br>" + \
+              f"- Adota-se <b>{n_barras_y}Ø{phi_y}</b> na direção Y<br>" + \
+              f"- As,prov,total,y = {n_barras_y} × {y_area_varao:.2f} = {Asy_prov_total_cm2:.2f} cm²<br>" + \
+              f"- Espaçamento real resultante: s ≈ {esp_y:.0f} mm<br>" + \
+              f"- As,prov,y = {Asy_prov_total_cm2:.2f} / {A_final_m:.2f} = {as_prov_y_m:.2f} cm²/m"
+
+    if quadrada and malha_unica:
+        texto_escolha_arm = "Como a sapata é quadrada, adotou-se uma <b>malha única</b> (ϕx = ϕy), distribuindo-se as barras ao longo da dimensão total da sapata em cada direção.<br><br>" + texto_x + "<br><br>" + texto_y
+    elif quadrada and not malha_unica:
+        texto_escolha_arm = "A sapata é quadrada, contudo <b>não foi possível adotar malha única</b>. Utilizaram-se diâmetros independentes.<br><br>" + texto_x + "<br><br>" + texto_y
+    else:
+        texto_escolha_arm = "Seleção de armadura baseada no número total de barras ao longo da dimensão de cada direção:<br><br>" + texto_x + "<br><br>" + texto_y
+    passos.append({"titulo":"3.4. Escolha da Armadura Final", "calculo":texto_escolha_arm})
+
+    tipo_sapata = "Quadrada" if quadrada else "Retangular"
+    dados_desenho = {"A_m":A_final_m, "B_m":B_final_m, "H_mm":H_final_mm, "bp_mm":bp_mm, "hp_mm":hp_mm, "c_nom_mm":c_nom_mm, "phi_x":phi_x, "esp_x_mm":esp_x, "n_barras_x":n_barras_x, "phi_y":phi_y, "esp_y_mm":esp_y, "n_barras_y":n_barras_y}
+    resultado = {"status":"Sucesso", "mensagem":"Cálculo efetuado com sucesso.", "passos":passos, "tipo_sapata":tipo_sapata, "dimensoes":f"{A_final_m:.2f}m x {B_final_m:.2f}m x {H_final_mm/1000:.2f}m", "armadura_y":f"{n_barras_y}Ø{phi_y} (s ≈ {esp_y:.0f} mm)", "armadura_x":f"{n_barras_x}Ø{phi_x} (s ≈ {esp_x:.0f} mm)", "dados_desenho":dados_desenho}
     resultado['desenho_planta_svg'] = desenhar_sapata_planta_svg(dados_desenho)
     resultado['desenho_corte_svg'] = desenhar_sapata_corte_svg(dados_desenho)
     return resultado

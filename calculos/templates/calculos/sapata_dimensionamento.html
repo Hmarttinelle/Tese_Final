@@ -46,7 +46,6 @@
         <div class="form-actions">
             <button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Calcular</button>
             <button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button>
-            <button type="button" onclick="window.print()" class="btn-secundario"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
         </div>
     </form>
 
@@ -55,13 +54,22 @@
             <h3>Resultado Final:</h3>
             <p><strong>{{ resultado.mensagem }}</strong></p>
             {% if resultado.status == 'Sucesso' %}
-                <p><strong>Dimensões da Sapata (A x B x H):</strong> {{ resultado.dimensoes }}</p>
+                {% if resultado.tipo_sapata %}
+                <p><strong>Tipo de sapata:</strong> {{ resultado.tipo_sapata }}</p>
+                {% endif %}
+                <p><strong>Dimensões (A x B x H):</strong> {{ resultado.dimensoes }}</p>
                 <p><strong>Armadura Inferior (Dir. X):</strong> {{ resultado.armadura_x }}</p>
                 <p><strong>Armadura Inferior (Dir. Y):</strong> {{ resultado.armadura_y }}</p>
             {% endif %}
         </div>
 
         {% if resultado.status == 'Sucesso' %}
+        <div class="form-actions" style="margin-top: 20px; justify-content: center;">
+             <a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="btn-secundario">
+                <i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF
+            </a>
+        </div>
+
         <div class="desenhos-container" style="margin-top: 30px; text-align: center;">
             <div class="desenho-box" style="display: inline-block; vertical-align: top; width: 100%; max-width: 450px; margin: 10px;">
                 <h4>Representação Gráfica (Planta)</h4>

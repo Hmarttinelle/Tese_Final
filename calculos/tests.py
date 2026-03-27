@@ -76,6 +76,6 @@ class SapataServiceTests(TestCase):
         resultado = sapata_service.dimensionar_sapata(**dados_sapata)
         self.assertEqual(resultado['status'], 'Sucesso')
         self.assertEqual(resultado['dimensoes'], '2.30m x 2.30m x 0.45m')
-        self.assertEqual(resultado['armadura_x'], 'Ø12 c/ 167 mm (6.79 cm²/m)')
-        self.assertEqual(resultado['armadura_y'], 'Ø12 c/ 143 mm (7.92 cm²/m)')
+        self.assertEqual(resultado['armadura_x'], '14Ø12 (s ≈ 168 mm)')
+        self.assertEqual(resultado['armadura_y'], '14Ø12 (s ≈ 168 mm)')
         print("   Teste da sapata concluído com sucesso!")

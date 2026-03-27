@@ -27,4 +27,6 @@ urlpatterns = [
     # URL de configuração
     path('configuracao/', views.configuracao_view, name='configuracao_sistema'),
 
+    # NOVA URL PARA GERAR O RELATÓRIO PDF
+    path('relatorio/<int:calculo_id>/pdf/', views.gerar_relatorio_pdf_view, name='gerar_relatorio_pdf'),
 ]
