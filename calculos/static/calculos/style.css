@@ -587,6 +587,7 @@ body.dark-theme .theme-option input[type="radio"]:checked + label {
 
 /* Estilos para o tema escuro */
 body.dark-theme .ligacao-selector > span { color: #E0E0E0; }
+body.dark-theme .container {
     border-color: #424242;
 }
 body.dark-theme .passo-a-passo li { border-bottom-color: #424242; }
