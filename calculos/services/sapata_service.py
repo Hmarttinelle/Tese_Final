@@ -87,6 +87,10 @@ def escolher_armadura_sapata_total(As_req_cm2_m, L_distrib_m, c_nom_mm):
 # FUNÇÕES AUXILIARES PARA DESENHOS
 # ==============================================================================
 
+# ==============================================================================
+# FUNÇÕES AUXILIARES PARA DESENHOS
+# ==============================================================================
+
 def desenhar_sapata_planta_svg(dados_desenho):
     A = dados_desenho['A_m']
     B = dados_desenho['B_m']

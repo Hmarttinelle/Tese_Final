@@ -30,9 +30,7 @@ SECRET_KEY='django-insecure-az(0*9m(dq_6l!p04%a+ydn*teowdwr9xt_v&@7u$#@c+(p@if'
 # SECURITY WARNING: don't run with debug turned on in production!
 # O valor 'False' é o padrão se a variável não for encontrada'
 DEBUG=True
-
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pv27108.pythonanywhere.com']
 
 # Application definition
 
@@ -124,6 +122,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "calculos/static")]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -134,3 +133,6 @@ MEDIA_URL = '/media/'
 
 # Define o caminho no seu computador onde os ficheiros carregados serão guardados
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Caminho para onde o comando collectstatic irá juntar todos os ficheiros estáticos
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
