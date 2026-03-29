@@ -122,4 +122,4 @@ Este projeto tem uma base sólida que pode ser expandida com novas funcionalidad
 
 ## Autor
 
-**Helder Marttinelle Dias Da Silva** - *Projeto desenvolvido para a Dissertação do Mestrado - IPV - 2025*
+**Helder Marttinelle Dias Da Silva** - *Projeto desenvolvido para a Dissertação do Mestrado - IPV - 2026*
