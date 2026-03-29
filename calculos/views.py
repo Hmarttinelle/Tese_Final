@@ -196,7 +196,7 @@ def historico_detalhe_view(request, calculo_id):
             'lig_base': {'label': 'Ligação na Base', 'symbol': '', 'unit': ''}, 'N_Ed': {'label': 'Esforço Axial', 'symbol': 'N_{Ed}', 'unit': 'kN'},
             'phi_ef': {'label': 'Coef. Fluência', 'symbol': r'\phi_{ef}', 'unit': ''}, 'sigma_adm': {'label': 'Tensão Admissível', 'symbol': r'\sigma_{adm}', 'unit': 'kPa'},
             'bp': {'label': 'Largura do Pilar', 'symbol': 'b_p', 'unit': 'mm'}, 'hp': {'label': 'Altura do Pilar', 'symbol': 'h_p', 'unit': 'mm'},
-            'M_Edy': {'label': 'Momento Fletor (Y)', 'symbol': 'M_{Ed,y}', 'unit': 'kNm'},
+            'M_Edy': {'label': 'Momento Fletor', 'symbol': 'M_{Ed,y}', 'unit': 'kNm'},
         }
         input_formatado = []
         for key, value in input_data.items():
@@ -251,7 +251,7 @@ def gerar_relatorio_pdf_view(request, calculo_id):
         'lig_base': {'label': 'Ligação na Base', 'symbol': '', 'unit': ''}, 'N_Ed': {'label': 'Esforço Axial', 'symbol': 'N_{Ed}', 'unit': 'kN'},
         'phi_ef': {'label': 'Coef. Fluência', 'symbol': r'\phi_{ef}', 'unit': ''}, 'sigma_adm': {'label': 'Tensão Admissível', 'symbol': r'\sigma_{adm}', 'unit': 'kPa'},
         'bp': {'label': 'Largura do Pilar', 'symbol': 'b_p', 'unit': 'mm'}, 'hp': {'label': 'Altura do Pilar', 'symbol': 'h_p', 'unit': 'mm'},
-        'M_Edy': {'label': 'Momento Fletor (Y)', 'symbol': 'M_{Ed,y}', 'unit': 'kNm'},
+        'M_Edy': {'label': 'Momento Fletor', 'symbol': 'M_{Ed,y}', 'unit': 'kNm'},
     }
     input_formatado = []
     for key, value in calculo.input_data.items():
