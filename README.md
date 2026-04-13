@@ -123,4 +123,5 @@ Este projeto tem uma base sólida que pode ser expandida com novas funcionalidad
 ## Autor
 
 **Helder Silva** - *Projeto desenvolvido para a Dissertação do Mestrado - IPV - 2026*
-**Email:** helder.marttinelle@mail.ru
+
+**Email:** *helder.marttinelle@mail.ru*
