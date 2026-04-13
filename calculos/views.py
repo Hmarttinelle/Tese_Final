@@ -265,7 +265,7 @@ def gerar_relatorio_pdf_view(request, calculo_id):
             if 'formula' in passo and passo['formula']:
                 passo['formula_formatada'] = formatar_latex_para_html(passo['formula'])
 
-    html_string = render_to_string('calculos/relatorio_pdf.html', {'calculo': calculo})
+    html_string = render_to_string('calculos/relatorio_pdf.html', {'calculo': calculo}, request=request)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="relatorio_{calculo.elemento.lower()}_{calculo.id}.pdf"'

@@ -6,7 +6,6 @@
 {% block content %}
 <a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
 <h1>Dimensionamento de Pilar à Flexão Composta</h1>
-<p>Insira os dados.</p>
 
 <form method="post">
     {% csrf_token %}
@@ -116,9 +115,8 @@
     </a>
 </div>
 
-<div class="resultado-detalhado">
     {% if resultado.desenho_svg %}
-    <div class="desenho-wrapper">
+    <div class="desenho-wrapper" style="margin-top: 30px;">
         <h4>Representação Gráfica da Secção</h4>
         <div id="desenho-pilar-container" style="max-width: 400px; margin: 20px auto 0;">
             {{ resultado.desenho_svg|safe }}
@@ -131,7 +129,7 @@
     </div>
     {% endif %}
     {% if resultado.passos %}
-    <div class="passo-a-passo">
+    <div class="passo-a-passo" style="margin-top: 20px;">
         <h4>Cálculo Detalhado (Passo a Passo):</h4>
         <ul>
             {% for passo in resultado.passos %}
@@ -144,7 +142,6 @@
         </ul>
     </div>
     {% endif %}
-</div>
 {% endif %}
 {% endif %}
 {% endblock %}
