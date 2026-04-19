@@ -270,8 +270,6 @@ form {
 .ligacao-options label:hover { background-color: #e9ecef; z-index: 1; }
 .ligacao-options label.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color-light); z-index: 2; }
 .ligacao-options label.active .label-text { color: var(--primary-color); font-weight: bold; }
-
-/* CORREÇÃO PARA ÍCONES DOS PILARES */
 .ligacao-options img {
     width: 28px;
     height: 28px;
@@ -283,9 +281,7 @@ form {
     opacity: 1;
 }
 
-/* ============================================= */
-/* TEMA ESCURO - VERSÃO COMPLETA E CORRIGIDA     */
-/* ============================================= */
+/* TEMA ESCURO     */
 body.dark-theme {
     --primary-color-light: #424242;
     --secondary-color: #BDBDBD;
@@ -324,9 +320,7 @@ body.dark-theme .passo-a-passo, body.dark-theme .desenho-wrapper {
     background-color: #2a2a2a;
 }
 
-/* ============================================= */
 /* ESTILOS PARA O SPINNER DE CARREGAMENTO      */
-/* ============================================= */
 .spinner-overlay {
     position: fixed;
     top: 0;
@@ -354,9 +348,8 @@ body.dark-theme .passo-a-passo, body.dark-theme .desenho-wrapper {
     100% { transform: rotate(360deg); }
 }
 
-/* ============================================= */
-/* PÁGINA DE CONFIGURAÇÃO                        */
-/* ============================================= */
+
+/* PÁGINA DE CONFIGURAÇÃO  */
 .config-form {
     display: flex;
     flex-direction: column;
@@ -492,9 +485,9 @@ body.dark-theme .theme-option input[type="radio"]:checked + label {
     margin-bottom: 5px;
 }
 
-/* ============================================= */
+
 /* FORMULÁRIO DE PILARES - SELETORES VISUAIS (V2)*/
-/* ============================================= */
+
 .form-group-full {
     grid-column: 1 / -1; /* Ocupa a largura toda */
 }
