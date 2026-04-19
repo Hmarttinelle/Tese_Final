@@ -9,7 +9,7 @@ from .forms import SystemConfigurationForm
 import re
 
 # ==============================================================================
-# FUNÇÃO DE FORMATAÇÃO DE FÓRMULAS (VERSÃO FINAL CORRIGIDA)
+# FUNÇÃO DE FORMATAÇÃO DE FÓRMULAS 
 # ==============================================================================
 def formatar_latex_para_html(texto):
     """
@@ -61,9 +61,6 @@ def formatar_latex_para_html(texto):
     
     return texto
 
-# ==============================================================================
-# RESTANTE DO FICHEIRO (INALTRADO)
-# ==============================================================================
 def _salvar_calculo_no_historico(request, elemento, resultado):
     if resultado.get('status') == 'Sucesso':
         input_data_copy = request.POST.copy().dict()
