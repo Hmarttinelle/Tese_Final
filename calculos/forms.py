@@ -14,7 +14,6 @@ class SystemConfigurationForm(forms.ModelForm):
         }
         
         widgets = {
-            # CORREÇÃO AQUI: Alterado de forms.Select para forms.RadioSelect
             'theme_mode': forms.RadioSelect,
             'primary_color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color'}),
             'background_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
