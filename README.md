@@ -1,6 +1,9 @@
-# Calculadora de Dimensionamento Estrutural (Eurocódigo 2)
+# M.J. Structural Tools
 
-Este projeto é uma aplicação web desenvolvida em Django, criada no âmbito da minha Dissertação para mestrado em IPV. A sua principal função é auxiliar no dimensionamento de elementos estruturais de betão armado, seguindo as diretrizes da norma portuguesa **NP EN 1992-1-1:2010 (Eurocódigo 2)**.
+Este projeto é uma ferramenta de cálculo para dimensionamento de elementos estruturais 
+(Vigas, Pilares e Sapatas) em conformidade com o Eurocódigo 2, criada no âmbito da minha Dissertação para mestrado em IPV
+
+**Dedicado à memória de Marttinelle Jr.**
 
 A ferramenta permite a engenheiros e estudantes de engenharia civil realizar cálculos de forma rápida e precisa, gerando memórias de cálculo detalhadas e representações gráficas das secções.
 
