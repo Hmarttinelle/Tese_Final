@@ -1,22 +1,39 @@
 {% extends "calculos/base.html" %}
 {% load static %}
 
-{% block title %}Menu Principal - Cálculo Estrutural{% endblock %}
+{% block title %}Menu Principal - M.J. Structural Tools{% endblock %}
 
 {% block content %}
 <div class="header-logo">
-    <h1>Análise e Dimensionamento de Elementos Estruturais</h1>
+    <h1 style="font-size: 3rem; margin-bottom: 0;">M.J. Structural Tools</h1>
+    <p style="font-size: 2rem; color: #666; margin-top: 5px;">Ferramenta de Dimensionamento dos Elementos Estruturais</p>
 </div>
 <p>Selecione o tipo de elemento que pretende dimensionar:</p>
 
 <a href="{% url 'viga_dimensionamento' %}" class="nav-card">
-    <i class="fa-solid fa-pen-ruler"></i> Dimensionar Viga
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+        <rect x="2" y="10" width="20" height="4" fill="currentColor" stroke="none" />
+        <polygon points="5,14 2,19 8,19" fill="none" />
+        <polygon points="19,14 16,19 22,19" fill="none" />
+        <line x1="1" y1="19" x2="23" y2="19" />
+    </svg>
+    Dimensionar Viga
 </a>
 <a href="{% url 'pilar_dimensionamento' %}" class="nav-card">
-    <i class="fa-solid fa-building-columns"></i> Dimensionar Pilar
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+        <rect x="9" y="3" width="6" height="18" fill="currentColor" stroke="none"/>
+        <line x1="6" y1="21" x2="18" y2="21" stroke-width="3" />
+        <line x1="7" y1="3" x2="17" y2="3" stroke-width="3" />
+    </svg>
+    Dimensionar Pilar
 </a>
 <a href="{% url 'sapata_dimensionamento' %}" class="nav-card">
-    <i class="fa-solid fa-layer-group"></i> Dimensionar Sapata
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+        <rect x="10" y="3" width="4" height="10" fill="currentColor" stroke="none" />
+        <polygon points="10,13 4,21 20,21 14,13" fill="none" />
+        <line x1="2" y1="21" x2="22" y2="21" stroke-width="2" />
+    </svg>
+    Dimensionar Sapata
 </a>
 <a href="{% url 'historico_calculos' %}" class="nav-card">
     <i class="fa-solid fa-clock-rotate-left"></i> Ver Histórico
